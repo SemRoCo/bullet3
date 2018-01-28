@@ -2,8 +2,8 @@
 
 This software is provided 'as-is', without any express or implied warranty.
 In no event will the authors be held liable for any damages arising from the use of this software.
-Permission is granted to anyone to use this software for any purpose, 
-including commercial applications, and to alter it and redistribute it freely, 
+Permission is granted to anyone to use this software for any purpose,
+including commercial applications, and to alter it and redistribute it freely,
 subject to the following restrictions:
 
 1. The origin of this software must not be misrepresented; you must not claim that you wrote the original software. If you use this software in a product, an acknowledgment in the product documentation would be appreciated but is not required.
@@ -49,7 +49,7 @@ ATTRIBUTE_ALIGNED16(struct) BulletURDFInternalData
 	btHashMap<btHashInt,UrdfMaterialColor> m_linkColors;
     btAlignedObjectArray<btCollisionShape*> m_allocatedCollisionShapes;
 	mutable btAlignedObjectArray<btTriangleMesh*> m_allocatedMeshInterfaces;
-	
+
 	LinkVisualShapesConverter* m_customVisualShapesConverter;
 	bool m_enableTinyRenderer;
 
@@ -86,14 +86,14 @@ BulletURDFImporter::BulletURDFImporter(struct GUIHelperInterface* helper, LinkVi
 	m_data->m_guiHelper = helper;
 	m_data->m_customVisualShapesConverter = customConverter;
 
-  
+
 }
 
 struct BulletErrorLogger : public ErrorLogger
 {
 	int m_numErrors;
 	int m_numWarnings;
-	
+
 	BulletErrorLogger()
 	:m_numErrors(0),
 	m_numWarnings(0)
@@ -109,12 +109,12 @@ struct BulletErrorLogger : public ErrorLogger
 		m_numWarnings++;
 		b3Warning(warning);
 	}
-	
+
 	virtual void printMessage(const char* msg)
 	{
 		b3Printf(msg);
 	}
-};	
+};
 
 bool BulletURDFImporter::loadURDF(const char* fileName, bool forceFixedBase)
 {
@@ -123,12 +123,12 @@ bool BulletURDFImporter::loadURDF(const char* fileName, bool forceFixedBase)
 
 //int argc=0;
 	char relativeFileName[1024];
-	
+
 	b3FileUtils fu;
-	
+
 	//bool fileFound = fu.findFile(fileName, relativeFileName, 1024);
   	bool fileFound = (b3ResourcePath::findResourcePath(fileName,relativeFileName,1024))>0;
-	
+
 	std::string xml_string;
 
 	if (!fileFound){
@@ -136,7 +136,7 @@ bool BulletURDFImporter::loadURDF(const char* fileName, bool forceFixedBase)
 		return false;
 	} else
 	{
-		
+
 		char path[1024];
 		fu.extractPath(relativeFileName, path, sizeof(path));
 		m_data->setSourceFile(relativeFileName, path);
@@ -174,24 +174,24 @@ bool BulletURDFImporter::loadSDF(const char* fileName, bool forceFixedBase)
 
     //int argc=0;
     char relativeFileName[1024];
-    
+
     b3FileUtils fu;
-    
+
     //bool fileFound = fu.findFile(fileName, relativeFileName, 1024);
     bool fileFound = (b3ResourcePath::findResourcePath(fileName,relativeFileName,1024))>0;
-    
+
     std::string xml_string;
-    
+
     if (!fileFound){
         b3Warning("SDF file '%s' not found\n", fileName);
         return false;
     } else
     {
-        
+
         char path[1024];
         fu.extractPath(relativeFileName, path, sizeof(path));
         m_data->setSourceFile(relativeFileName, path);
-        
+
         std::fstream xml_file(relativeFileName, std::fstream::in);
         while ( xml_file.good() )
         {
@@ -201,12 +201,12 @@ bool BulletURDFImporter::loadSDF(const char* fileName, bool forceFixedBase)
         }
         xml_file.close();
     }
-    
+
     BulletErrorLogger loggie;
     //todo: quick test to see if we can re-use the URDF parser for SDF or not
     m_data->m_urdfParser.setParseSDF(true);
     bool result = m_data->m_urdfParser.loadSDF(xml_string.c_str(), &loggie);
-    
+
     return result;
 }
 
@@ -216,7 +216,7 @@ const char* BulletURDFImporter::getPathPrefix()
 	return m_data->m_pathPrefix;
 }
 
-    
+
 void BulletURDFImporter::setBodyUniqueId(int bodyId)
 {
     m_data->m_bodyId =bodyId;
@@ -234,7 +234,7 @@ BulletURDFImporter::~BulletURDFImporter()
 	delete m_data;
 }
 
-    
+
 int BulletURDFImporter::getRootLinkIndex() const
 {
 	if (m_data->m_urdfParser.getModel().m_rootLinks.size()==1)
@@ -243,7 +243,7 @@ int BulletURDFImporter::getRootLinkIndex() const
 	}
     return -1;
 };
-    
+
 void BulletURDFImporter::getLinkChildIndices(int linkIndex, btAlignedObjectArray<int>& childLinkIndices) const
 {
 	childLinkIndices.resize(0);
@@ -252,7 +252,7 @@ void BulletURDFImporter::getLinkChildIndices(int linkIndex, btAlignedObjectArray
 	{
 		const UrdfLink* link = *linkPtr;
 		//int numChildren = m_data->m_urdfParser->getModel().m_links.getAtIndex(linkIndex)->
-		
+
 		for (int i=0;i<link->m_childLinks.size();i++)
 		{
 			int childIndex =link->m_childLinks[i]->m_linkIndex;
@@ -278,7 +278,7 @@ std::string BulletURDFImporter::getBodyName() const
 {
 	return m_data->m_urdfParser.getModel().m_name;
 }
-    
+
 std::string BulletURDFImporter::getJointName(int linkIndex) const
 {
 	UrdfLink* const* linkPtr = m_data->m_urdfParser.getModel().m_links.getAtIndex(linkIndex);
@@ -293,15 +293,15 @@ std::string BulletURDFImporter::getJointName(int linkIndex) const
 	}
 	return "";
 }
-    
+
 
 void  BulletURDFImporter::getMassAndInertia(int linkIndex, btScalar& mass,btVector3& localInertiaDiagonal, btTransform& inertialFrame) const
 {
 	//the link->m_inertia is NOT necessarily aligned with the inertial frame
 	//so an additional transform might need to be computed
 	UrdfLink* const* linkPtr = m_data->m_urdfParser.getModel().m_links.getAtIndex(linkIndex);
-	
-	
+
+
 	btAssert(linkPtr);
 	if (linkPtr)
 	{
@@ -367,8 +367,8 @@ void  BulletURDFImporter::getMassAndInertia(int linkIndex, btScalar& mass,btVect
 		inertialFrame.setIdentity();
 	}
 }
-    
-bool BulletURDFImporter::getJointInfo2(int urdfLinkIndex, btTransform& parent2joint, btTransform& linkTransformInWorld, btVector3& jointAxisInJointSpace, int& jointType, btScalar& jointLowerLimit, btScalar& jointUpperLimit, btScalar& jointDamping, btScalar& jointFriction, btScalar& jointMaxForce, btScalar& jointMaxVelocity) const 
+
+bool BulletURDFImporter::getJointInfo2(int urdfLinkIndex, btTransform& parent2joint, btTransform& linkTransformInWorld, btVector3& jointAxisInJointSpace, int& jointType, btScalar& jointLowerLimit, btScalar& jointUpperLimit, btScalar& jointDamping, btScalar& jointFriction, btScalar& jointMaxForce, btScalar& jointMaxVelocity) const
 {
     jointLowerLimit = 0.f;
     jointUpperLimit = 0.f;
@@ -383,7 +383,7 @@ bool BulletURDFImporter::getJointInfo2(int urdfLinkIndex, btTransform& parent2jo
 	{
 		UrdfLink* link = *linkPtr;
 		linkTransformInWorld = link->m_linkTransformInWorld;
-		
+
 		if (link->m_parentJoint)
 		{
 			UrdfJoint* pj = link->m_parentJoint;
@@ -403,7 +403,7 @@ bool BulletURDFImporter::getJointInfo2(int urdfLinkIndex, btTransform& parent2jo
 			return false;
 		}
 	}
-	
+
 	return false;
 
 };
@@ -412,8 +412,8 @@ bool BulletURDFImporter::getJointInfo(int urdfLinkIndex, btTransform& parent2joi
 {
 	btScalar jointMaxForce;
 	btScalar jointMaxVelocity;
-	return getJointInfo2(urdfLinkIndex, parent2joint, linkTransformInWorld, jointAxisInJointSpace, jointType, jointLowerLimit, jointUpperLimit, jointDamping, jointFriction,jointMaxForce,jointMaxVelocity); 
-	
+	return getJointInfo2(urdfLinkIndex, parent2joint, linkTransformInWorld, jointAxisInJointSpace, jointType, jointLowerLimit, jointUpperLimit, jointDamping, jointFriction,jointMaxForce,jointMaxVelocity);
+
 }
 
 void BulletURDFImporter::setRootTransformInWorld(const btTransform& rootTransformInWorld)
@@ -452,7 +452,7 @@ static btCollisionShape* createConvexHullFromShapes(std::vector<tinyobj::shape_t
 			pt.setValue(shape.mesh.positions[shape.mesh.indices[f] * 3 + 0],
 				shape.mesh.positions[shape.mesh.indices[f] * 3 + 1],
 				shape.mesh.positions[shape.mesh.indices[f] * 3 + 2]);
-			
+
 			convexHull->addPoint(pt*geomScale,false);
 
 			pt.setValue(shape.mesh.positions[shape.mesh.indices[f + 1] * 3 + 0],
@@ -510,26 +510,27 @@ bool findExistingMeshFile(
 		return false;
 	}
 
+	std::list<std::string> search_paths;
 	std::string drop_it = "package://";
-	if (fn.substr(0, drop_it.length())==drop_it)
+	if (fn.substr(0, drop_it.length())==drop_it) {
 		fn = fn.substr(drop_it.length());
 
-	std::list<std::string> shorter;
-	shorter.push_back("../..");
-	shorter.push_back("..");
-	shorter.push_back(".");
-	int cnt = urdf_path.size();
-	for (int i=0; i<cnt; ++i)
-	{
-		if (urdf_path[i]=='/' || urdf_path[i]=='\\')
+		std::string ros_pkg_path = getenv("ROS_PACKAGE_PATH");
+		int cnt = ros_pkg_path.size();
+		int startIdx = 0;
+		for (int i=0; i<cnt; ++i)
 		{
-			shorter.push_back(urdf_path.substr(0, i));
+			if (ros_pkg_path[i]==':' || ros_pkg_path[i]==';')
+			{
+				search_paths.push_back(ros_pkg_path.substr(startIdx, i - startIdx));
+				startIdx = i + 1;
+			}
 		}
+
 	}
-	shorter.reverse();
+
 
 	std::string existing_file;
-
 	{
 		std::string attempt = fn;
 		FILE* f = fopen(attempt.c_str(), "rb");
@@ -539,10 +540,16 @@ bool findExistingMeshFile(
 			fclose(f);
 		}
 	}
+	std::string search_paths_str;
 	if (existing_file.empty())
 	{
-		for (std::list<std::string>::iterator x=shorter.begin(); x!=shorter.end(); ++x)
+		for (std::list<std::string>::iterator x=search_paths.begin(); x!=search_paths.end(); ++x)
 		{
+			if (x == search_paths.begin())
+				search_paths_str = *x;
+			else
+				search_paths_str += '\n' + *x;
+
 			std::string attempt = *x + "/" + fn;
 			FILE* f = fopen(attempt.c_str(), "rb");
 			if (!f)
@@ -559,7 +566,7 @@ bool findExistingMeshFile(
 
 	if (existing_file.empty())
 	{
-		b3Warning("%s: cannot find '%s' in any directory in urdf path\n", error_message_prefix.c_str(), fn.c_str());
+		b3Warning("%s: cannot find '%s' in any directory in urdf path\nPaths are:\n%s", error_message_prefix.c_str(), fn.c_str(), search_paths_str.c_str());
 		return false;
 	}
 	else
@@ -618,12 +625,12 @@ btCollisionShape* BulletURDFImporter::convertURDFToCollisionShape(const UrdfColl
 			cylZShape->recalcLocalAabb();
 			cylZShape->initializePolyhedralFeatures();
 			cylZShape->optimizeConvexHull();
-			
+
 			//btConvexShape* cylZShape = new btConeShapeZ(cylRadius,cylLength);//(vexHullShape(&vertices[0].x(), vertices.size(), sizeof(btVector3));
-#else       
+#else
             btVector3 halfExtents(cylRadius,cylRadius, cylHalfLength);
             btCylinderShapeZ* cylZShape = new btCylinderShapeZ(halfExtents);
-#endif       
+#endif
 
             shape = cylZShape;
             break;
@@ -810,7 +817,7 @@ upAxisMat.setIdentity();
 
         default:
 		b3Warning("Error: unknown collision geometry type %i\n", collision->m_geometry.m_type);
-		
+
 	}
 	return shape;
 }
@@ -820,7 +827,7 @@ void BulletURDFImporter::convertURDFToVisualShapeInternal(const UrdfVisual* visu
 {
 	BT_PROFILE("convertURDFToVisualShapeInternal");
 
-	
+
 	GLInstanceGraphicsShape* glmesh = 0;
 
 	btConvexShape* convexColShape = 0;
@@ -830,7 +837,7 @@ void BulletURDFImporter::convertURDFToVisualShapeInternal(const UrdfVisual* visu
 		case URDF_GEOM_CYLINDER:
 		{
 			btAlignedObjectArray<btVector3> vertices;
-		
+
 			//int numVerts = sizeof(barrel_vertices)/(9*sizeof(float));
 			int numSteps = 32;
 			for (int i = 0; i<numSteps; i++)
@@ -838,7 +845,7 @@ void BulletURDFImporter::convertURDFToVisualShapeInternal(const UrdfVisual* visu
 
 				btScalar cylRadius = visual->m_geometry.m_capsuleRadius;
 				btScalar cylLength = visual->m_geometry.m_capsuleHeight;
-				
+
 				btVector3 vert(cylRadius*btSin(SIMD_2_PI*(float(i) / numSteps)), cylRadius*btCos(SIMD_2_PI*(float(i) / numSteps)), cylLength / 2.);
 				vertices.push_back(vert);
 				vert[2] = -cylLength / 2.;
@@ -1021,7 +1028,7 @@ void BulletURDFImporter::convertURDFToVisualShapeInternal(const UrdfVisual* visu
 			int numVertices = hull->numVertices();
 			int numIndices = hull->numIndices();
 
-			
+
 			glmesh = new GLInstanceGraphicsShape;
 		//	int index = 0;
 			glmesh->m_indices = new b3AlignedObjectArray<int>();
@@ -1050,7 +1057,7 @@ void BulletURDFImporter::convertURDFToVisualShapeInternal(const UrdfVisual* visu
 			{
 				glmesh->m_indices->push_back(hull->getIndexPointer()[i]);
 			}
-			
+
 			glmesh->m_numvertices = glmesh->m_vertices->size();
 			glmesh->m_numIndices = glmesh->m_indices->size();
 		}
@@ -1059,7 +1066,7 @@ void BulletURDFImporter::convertURDFToVisualShapeInternal(const UrdfVisual* visu
 		convexColShape = 0;
 
 	}
-	
+
 	if (glmesh && glmesh->m_numIndices>0 && glmesh->m_numvertices >0)
 	{
 		BT_PROFILE("glmesh");
@@ -1089,7 +1096,7 @@ void BulletURDFImporter::convertURDFToVisualShapeInternal(const UrdfVisual* visu
 		}
 	}
     delete glmesh;
-    
+
 }
 
 
@@ -1100,14 +1107,14 @@ int BulletURDFImporter::convertLinkVisualShapes(int linkIndex, const char* pathP
 	btAlignedObjectArray<int> indices;
 	btTransform startTrans; startTrans.setIdentity();
 	btAlignedObjectArray<BulletURDFTexture> textures;
-	
+
     const UrdfModel& model = m_data->m_urdfParser.getModel();
 	UrdfLink* const* linkPtr = model.m_links.getAtIndex(linkIndex);
 	if (linkPtr)
 	{
 
 		const UrdfLink* link = *linkPtr;
-	
+
 		for (int v = 0; v < link->m_visualArray.size();v++)
 		{
 			const UrdfVisual& vis = link->m_visualArray[v];
@@ -1124,33 +1131,33 @@ int BulletURDFImporter::convertLinkVisualShapes(int linkIndex, const char* pathP
 				m_data->m_linkColors.insert(linkIndex,matCol);
 			}
 			convertURDFToVisualShapeInternal(&vis, pathPrefix, localInertiaFrame.inverse()*childTrans, vertices, indices,textures);
-		
-		
+
+
 		}
 	}
 	if (vertices.size() && indices.size())
 	{
 //		graphicsIndex  = m_data->m_guiHelper->registerGraphicsShape(&vertices[0].xyzw[0], vertices.size(), &indices[0], indices.size());
 		//graphicsIndex  = m_data->m_guiHelper->registerGraphicsShape(&vertices[0].xyzw[0], vertices.size(), &indices[0], indices.size());
-		
+
 		//CommonRenderInterface* renderer = m_data->m_guiHelper->getRenderInterface();
-		
+
 		if (1)
 		{
 			int textureIndex = -1;
 			if (textures.size())
 			{
-				
+
 				textureIndex = m_data->m_guiHelper->registerTexture(textures[0].textureData1,textures[0].m_width,textures[0].m_height);
 			}
 			{
 				B3_PROFILE("registerGraphicsShape");
 				graphicsIndex = m_data->m_guiHelper->registerGraphicsShape(&vertices[0].xyzw[0], vertices.size(), &indices[0], indices.size(), B3_GL_TRIANGLES, textureIndex);
 			}
-			
+
 		}
 	}
-	
+
 	//delete textures
 	for (int i=0;i<textures.size();i++)
 	{
@@ -1258,19 +1265,19 @@ btStridingMeshInterface* BulletURDFImporter::getAllocatedMeshInterface(int index
 
  class btCompoundShape* BulletURDFImporter::convertLinkCollisionShapes(int linkIndex, const char* pathPrefix, const btTransform& localInertiaFrame) const
 {
-        
+
     btCompoundShape* compoundShape = new btCompoundShape();
     m_data->m_allocatedCollisionShapes.push_back(compoundShape);
-    
+
     compoundShape->setMargin(gUrdfDefaultCollisionMargin);
 	UrdfLink* const* linkPtr = m_data->m_urdfParser.getModel().m_links.getAtIndex(linkIndex);
 	btAssert(linkPtr);
 	if (linkPtr)
 	{
-		
+
 		UrdfLink* link = *linkPtr;
-		
-			
+
+
 		for (int v=0;v<link->m_collisionArray.size();v++)
 		{
 			const UrdfCollision& col = link->m_collisionArray[v];
@@ -1284,15 +1291,15 @@ btStridingMeshInterface* BulletURDFImporter::getAllocatedMeshInterface(int index
 					m_data->m_allocatedCollisionShapes.push_back(compound->getChildShape(i));
 				}
 			}
-			
+
 			if (childShape)
 			{
 				btTransform childTrans = col.m_linkLocalFrame;
-				
+
 				compoundShape->addChildShape(localInertiaFrame.inverse()*childTrans,childShape);
 			}
 		}
 	}
-	
+
     return compoundShape;
 }
