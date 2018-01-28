@@ -556,8 +556,8 @@ typedef struct bInvalidHandle {
         double m_contactBreakingThreshold;
         double m_contactProcessingThreshold;
         int m_padding;
-        void *m_body0;
-        void *m_body1;
+        btCollisionObjectDoubleData *m_body0;
+        btCollisionObjectDoubleData *m_body1;
     };
 
 
@@ -570,8 +570,8 @@ typedef struct bInvalidHandle {
         btVector3FloatData m_pointCachePositionWorldOnA[4];
         btVector3FloatData m_pointCachePositionWorldOnB[4];
         btVector3FloatData m_pointCacheNormalWorldOnB[4];
-        btVector3FloatData m_pointCacheLateralFrictionDir1;
-        btVector3FloatData m_pointCacheLateralFrictionDir2;
+        btVector3FloatData m_pointCacheLateralFrictionDir1[4];
+        btVector3FloatData m_pointCacheLateralFrictionDir2[4];
         float m_pointCacheDistance[4];
         float m_pointCacheAppliedImpulse[4];
         float m_pointCacheCombinedFriction[4];
@@ -601,8 +601,8 @@ typedef struct bInvalidHandle {
         float m_contactBreakingThreshold;
         float m_contactProcessingThreshold;
         int m_padding;
-        void *m_body0;
-        void *m_body1;
+        btCollisionObjectFloatData *m_body0;
+        btCollisionObjectFloatData *m_body1;
     };
 
 
@@ -1451,11 +1451,15 @@ typedef struct bInvalidHandle {
     {
     public:
         btQuaternionDoubleData m_zeroRotParentToThis;
-        btVector3DoubleData m_parentComToThisComOffset;
+        btVector3DoubleData m_parentComToThisPivotOffset;
         btVector3DoubleData m_thisPivotToThisComOffset;
         btVector3DoubleData m_jointAxisTop[6];
         btVector3DoubleData m_jointAxisBottom[6];
         btVector3DoubleData m_linkInertia;
+        btVector3DoubleData m_absFrameTotVelocityTop;
+        btVector3DoubleData m_absFrameTotVelocityBottom;
+        btVector3DoubleData m_absFrameLocVelocityTop;
+        btVector3DoubleData m_absFrameLocVelocityBottom;
         double m_linkMass;
         int m_parentIndex;
         int m_jointType;
@@ -1482,11 +1486,15 @@ typedef struct bInvalidHandle {
     {
     public:
         btQuaternionFloatData m_zeroRotParentToThis;
-        btVector3FloatData m_parentComToThisComOffset;
+        btVector3FloatData m_parentComToThisPivotOffset;
         btVector3FloatData m_thisPivotToThisComOffset;
         btVector3FloatData m_jointAxisTop[6];
         btVector3FloatData m_jointAxisBottom[6];
         btVector3FloatData m_linkInertia;
+        btVector3FloatData m_absFrameTotVelocityTop;
+        btVector3FloatData m_absFrameTotVelocityBottom;
+        btVector3FloatData m_absFrameLocVelocityTop;
+        btVector3FloatData m_absFrameLocVelocityBottom;
         int m_dofCount;
         float m_linkMass;
         int m_parentIndex;
@@ -1548,7 +1556,7 @@ typedef struct bInvalidHandle {
     {
     public:
         btCollisionObjectFloatData m_colObjData;
-        void *m_multiBody;
+        btMultiBodyFloatData *m_multiBody;
         int m_link;
         char m_padding[4];
     };
@@ -1559,7 +1567,7 @@ typedef struct bInvalidHandle {
     {
     public:
         btCollisionObjectDoubleData m_colObjData;
-        void *m_multiBody;
+        btMultiBodyDoubleData *m_multiBody;
         int m_link;
         char m_padding[4];
     };

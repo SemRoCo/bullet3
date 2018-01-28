@@ -709,8 +709,11 @@ private:
 	
 	bool __posUpdated;
 	int m_dofCount, m_posVarCnt;
+
 	bool m_useRK4, m_useGlobalVelocities;
-	
+	//for global velocities, see 8.3.2B Proposed resolution in Jakub Stepien PhD Thesis
+	//https://drive.google.com/file/d/0Bz3vEa19XOYGNWdZWGpMdUdqVmZ5ZVBOaEh4ZnpNaUxxZFNV/view?usp=sharing
+
 	///the m_needsJointFeedback gets updated/computed during the stepVelocitiesMultiDof and it for internal usage only
 	bool m_internalNeedsJointFeedback;
 };
@@ -718,12 +721,17 @@ private:
 struct btMultiBodyLinkDoubleData
 {
 	btQuaternionDoubleData	m_zeroRotParentToThis;
-	btVector3DoubleData		m_parentComToThisComOffset;
+	btVector3DoubleData		m_parentComToThisPivotOffset;
 	btVector3DoubleData		m_thisPivotToThisComOffset;
 	btVector3DoubleData		m_jointAxisTop[6];
 	btVector3DoubleData		m_jointAxisBottom[6];
 
 	btVector3DoubleData		m_linkInertia;   // inertia of the base (in local frame; diagonal)
+	btVector3DoubleData		m_absFrameTotVelocityTop;
+	btVector3DoubleData		m_absFrameTotVelocityBottom;
+	btVector3DoubleData		m_absFrameLocVelocityTop;
+	btVector3DoubleData		m_absFrameLocVelocityBottom;
+
 	double					m_linkMass;
 	int						m_parentIndex;
 	int						m_jointType;
@@ -751,11 +759,16 @@ struct btMultiBodyLinkDoubleData
 struct btMultiBodyLinkFloatData
 {
 	btQuaternionFloatData	m_zeroRotParentToThis;
-	btVector3FloatData		m_parentComToThisComOffset;
+	btVector3FloatData		m_parentComToThisPivotOffset;
 	btVector3FloatData		m_thisPivotToThisComOffset;
 	btVector3FloatData		m_jointAxisTop[6];
 	btVector3FloatData		m_jointAxisBottom[6];
-	btVector3FloatData	m_linkInertia;   // inertia of the base (in local frame; diagonal)
+	btVector3FloatData		m_linkInertia;   // inertia of the base (in local frame; diagonal)
+	btVector3FloatData		m_absFrameTotVelocityTop;
+	btVector3FloatData		m_absFrameTotVelocityBottom;
+	btVector3FloatData		m_absFrameLocVelocityTop;
+	btVector3FloatData		m_absFrameLocVelocityBottom;
+
 	int						m_dofCount;
 	float				m_linkMass;
 	int					m_parentIndex;

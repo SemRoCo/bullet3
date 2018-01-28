@@ -5,7 +5,9 @@
 ///increase the SHARED_MEMORY_MAGIC_NUMBER whenever incompatible changes are made in the structures
 ///my convention is year/month/day/rev
 
-#define SHARED_MEMORY_MAGIC_NUMBER 201801010
+#define SHARED_MEMORY_MAGIC_NUMBER 201801170
+//#define SHARED_MEMORY_MAGIC_NUMBER 201801080
+//#define SHARED_MEMORY_MAGIC_NUMBER 201801010
 //#define SHARED_MEMORY_MAGIC_NUMBER 201710180
 //#define SHARED_MEMORY_MAGIC_NUMBER 201710050
 //#define SHARED_MEMORY_MAGIC_NUMBER 201708270
@@ -22,7 +24,7 @@ enum EnumSharedMemoryClientCommand
 	CMD_LOAD_BULLET,
 	CMD_SAVE_BULLET,
 	CMD_LOAD_MJCF,
-    CMD_LOAD_BUNNY,
+    CMD_LOAD_SOFT_BODY,
 	CMD_SEND_BULLET_DATA_STREAM,
 	CMD_CREATE_BOX_COLLISION_SHAPE,
 	CMD_CREATE_RIGID_BODY,
@@ -188,6 +190,8 @@ enum EnumSharedMemoryServerStatus
 		CMD_RESTORE_STATE_COMPLETED,
 		CMD_COLLISION_SHAPE_INFO_COMPLETED,
 		CMD_COLLISION_SHAPE_INFO_FAILED,
+		CMD_LOAD_SOFT_BODY_FAILED,
+		CMD_LOAD_SOFT_BODY_COMPLETED,
 		//don't go beyond 'CMD_MAX_SERVER_COMMANDS!
         CMD_MAX_SERVER_COMMANDS
 };
@@ -544,7 +548,7 @@ struct b3CollisionShapeData
 	int m_objectUniqueId;
 	int m_linkIndex;
 	int m_collisionGeometryType;//GEOM_BOX, GEOM_SPHERE etc
-	double m_dimensions[3];//meaning depends on m_visualGeometryType GEOM_BOX: extents, GEOM_SPHERE: radius, GEOM_CAPSULE:
+	double m_dimensions[3];//meaning depends on m_visualGeometryType GEOM_BOX: extents, GEOM_SPHERE: radius, GEOM_CAPSULE+GEOM_CYLINDER:length, radius, GEOM_MESH: mesh scale 
 	double m_localCollisionFrame[7];//pos[3], orn[4]
 	char m_meshAssetFileName[VISUAL_SHAPE_MAX_PATH_LEN];
 };
@@ -669,7 +673,9 @@ enum eURDF_Flags
 	URDF_USE_SELF_COLLISION_EXCLUDE_PARENT=16,
 	URDF_USE_SELF_COLLISION_EXCLUDE_ALL_PARENTS=32,
 	URDF_RESERVED=64,
-
+	URDF_USE_IMPLICIT_CYLINDER =128,
+	URDF_GLOBAL_VELOCITIES_MB =256,
+	MJCF_COLORS_FROM_FILE=512,
 };
 
 enum eUrdfGeomTypes //sync with UrdfParser UrdfGeomTypes
@@ -732,6 +738,7 @@ struct b3PhysicsSimulationParameters
 	double 	m_defaultNonContactERP;
 	double m_frictionERP;
 	int m_enableConeFriction;
+	int m_deterministicOverlappingPairs;
 };
 
 
