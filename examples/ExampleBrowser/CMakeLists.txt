@@ -42,7 +42,7 @@ ADD_LIBRARY(BulletExampleBrowserLib
 	../Utils/b3ReferenceFrameHelper.hpp
 	${GwenGUISupport_SRCS}
 	${GwenGUISupport_HDRS}
-	
+
 )
 
 SET_TARGET_PROPERTIES(BulletExampleBrowserLib PROPERTIES VERSION ${BULLET_VERSION})
@@ -112,7 +112,7 @@ ENDIF(WIN32)
 
 
 SET(ExtendedTutorialsSources
-	../ExtendedTutorials/Chain.cpp 
+	../ExtendedTutorials/Chain.cpp
 	../ExtendedTutorials/Chain.h
 	../ExtendedTutorials/Bridge.cpp
 	../ExtendedTutorials/Bridge.h
@@ -233,7 +233,7 @@ SET(BulletExampleBrowser_SRCS
 	../RenderingExamples/DynamicTexturedCubeDemo.h
 	../RenderingExamples/TinyVRGui.cpp
 	../RenderingExamples/TinyVRGui.h
-	
+
 	../RoboticsLearning/GripperGraspExample.cpp
 	../RoboticsLearning/GripperGraspExample.h
 	../RoboticsLearning/R2D2GraspExample.cpp
@@ -260,9 +260,9 @@ SET(BulletExampleBrowser_SRCS
 	../../Extras/Serialize/BulletWorldImporter/btWorldImporter.cpp
 	../../Extras/Serialize/BulletWorldImporter/btMultiBodyWorldImporter.cpp
 	../../Extras/Serialize/BulletWorldImporter/btBulletWorldImporter.cpp
-	../../Extras/Serialize/BulletFileLoader/bChunk.cpp		
+	../../Extras/Serialize/BulletFileLoader/bChunk.cpp
 	../../Extras/Serialize/BulletFileLoader/bFile.cpp
-	../../Extras/Serialize/BulletFileLoader/bDNA.cpp		
+	../../Extras/Serialize/BulletFileLoader/bDNA.cpp
 	../../Extras/Serialize/BulletFileLoader/btBulletFile.cpp
 
 	../Importers/ImportBsp/BspLoader.h
@@ -330,11 +330,12 @@ SET(BulletExampleBrowser_SRCS
   ../Constraints/Dof6Spring2Setup.h
   ../Constraints/ConstraintPhysicsSetup.cpp
   ../Constraints/ConstraintPhysicsSetup.h
-
+  ../SoftDemo/SoftDemo.h
+  ../SoftDemo/SoftDemo.cpp
 
 	../ThirdPartyLibs/stb_image/stb_image.cpp
 	../ThirdPartyLibs/stb_image/stb_image.h
-	
+
 	../ThirdPartyLibs/Wavefront/tiny_obj_loader.cpp
 	../ThirdPartyLibs/tinyxml/tinystr.cpp
 	../ThirdPartyLibs/tinyxml/tinyxml.cpp
@@ -356,7 +357,7 @@ ADD_EXECUTABLE(App_ExampleBrowser
 		ExampleEntries.cpp
 		ExampleEntries.h
 		${ExtendedTutorialsSources}
-		${BulletExampleBrowser_SRCS} 
+		${BulletExampleBrowser_SRCS}
 )
 
 FILE( MAKE_DIRECTORY "${PROJECT_BINARY_DIR}/data" )

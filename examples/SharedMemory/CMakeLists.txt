@@ -98,6 +98,7 @@ LINK_LIBRARIES(
 
 IF (USE_SOFT_BODY_MULTI_BODY_DYNAMICS_WORLD)
 	LINK_LIBRARIES(BulletSoftBody)
+	message("LINKED TO SOFTBODY LIBRARY")
 ENDIF()
 
 IF (WIN32)
@@ -254,7 +255,7 @@ LINK_LIBRARIES(
     					set(EXTRA_LIBS ${EXTRA_LIBS} ${FOUNDATION_FRAMEWORK})
 
 					set(CMAKE_MACOSX_RPATH 0)
-  					
+
 					SET(Platform_SRCS
                                         ../MultiThreading/b3PosixThreadSupport.cpp
                                         ../MultiThreading/b3PosixThreadSupport.h
