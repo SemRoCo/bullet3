@@ -6769,6 +6769,28 @@ bool PhysicsServerCommandProcessor::processInitPoseCommand(const struct SharedMe
 
 	}
 
+#ifndef SKIP_SOFT_BODY_MULTI_BODY_DYNAMICS_WORLD
+	if (body && body->m_softBody)
+	{
+		if (clientCmd.m_updateFlags & INIT_POSE_HAS_BASE_LINEAR_VELOCITY)
+		{
+			body->m_softBody->setVelocity(baseLinVel);
+		}
+						
+		if (clientCmd.m_updateFlags & INIT_POSE_HAS_INITIAL_POSITION)
+		{
+			body->m_softBody->m_initialWorldTransform = btTransform(body->m_softBody->m_initialWorldTransform.getBasis(), basePos);
+			body->m_softBody->setVelocity(baseLinVel);
+		}
+
+		if (clientCmd.m_updateFlags & INIT_POSE_HAS_INITIAL_ORIENTATION)
+		{
+			body->m_softBody->m_initialWorldTransform = btTransform(baseOrn, body->m_softBody->m_initialWorldTransform.getOrigin());
+			body->m_softBody->getWorldTransform().setRotation(baseOrn);
+		}		
+	}
+#endif
+
 	SharedMemoryStatus& serverCmd =serverStatusOut;
 	serverCmd.m_type = CMD_CLIENT_COMMAND_COMPLETED;
 	

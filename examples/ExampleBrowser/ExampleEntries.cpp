@@ -102,7 +102,7 @@ struct ExampleEntry
 	}
 };
 
-
+#define INCLUDE_CLOTH_DEMOS
 
 static ExampleEntry gDefaultExamples[]=
 {
@@ -147,7 +147,7 @@ static ExampleEntry gDefaultExamples[]=
 			PhysicsServerCreateFuncBullet2,PHYSICS_SERVER_ENABLE_COMMAND_LOGGING),
 	ExampleEntry(1,"Physics Server (Replay Log)", "Create a physics server that replay a command log from disk.",
 			PhysicsServerCreateFuncBullet2,PHYSICS_SERVER_REPLAY_FROM_COMMAND_LOG),
-//	
+//
 //	ExampleEntry(1, "Physics Client (Direct)", "Create a physics client that can communicate with a physics server directly in-process.", PhysicsClientCreateFunc,eCLIENTEXAMPLE_DIRECT),
 
 	ExampleEntry(0,"Inverse Dynamics"),
@@ -159,8 +159,8 @@ static ExampleEntry gDefaultExamples[]=
 	ExampleEntry(1, "DLS", "Damped Least Squares by Sam Buss. Example configures the IK tree of a Kuka IIWA", InverseKinematicsExampleCreateFunc, IK_DLS),
     ExampleEntry(1, "DLS-SVD", "Damped Least Squares with Singular Value Decomposition by Sam Buss. Example configures the IK tree of a Kuka IIWA", InverseKinematicsExampleCreateFunc, IK_DLS_SVD),
 
-    
-    
+
+
 	ExampleEntry(1, "Jacobi Transpose", "Jacobi Transpose by Sam Buss. Example configures the IK tree of a Kuka IIWA", InverseKinematicsExampleCreateFunc, IK_JACOB_TRANS),
 	ExampleEntry(1, "Jacobi Pseudo Inv", "Jacobi Pseudo Inverse Method by Sam Buss. Example configures the IK tree of a Kuka IIWA", InverseKinematicsExampleCreateFunc, IK_PURE_PSEUDO),
 
@@ -267,7 +267,7 @@ static ExampleEntry gDefaultExamples[]=
 
 
 	ExampleEntry(0,"Experiments"),
-	
+
 
 	ExampleEntry(1,"Robot Control", "Create a physics client and server to create and control robots.",
 			PhysicsClientCreateFunc, eCLIENTEXAMPLE_SERVER),
