@@ -9628,3 +9628,19 @@ void PhysicsServerCommandProcessor::setVRTeleportOrientation(const btQuaternion&
 {
 	gVRTeleportOrn = vrTeleportOrn;
 }
+
+
+#ifndef SKIP_SOFT_BODY_MULTI_BODY_DYNAMICS_WORLD
+	bool PhysicsServerCommandProcessor::proceessApplyNodeForce(const struct SharedMemoryCommand& clientCmd, struct SharedMemoryStatus& serverStatusOut, char* bufferServerToClient, int bufferSizeInBytes) {
+
+	}
+	
+	bool PhysicsServerCommandProcessor::processSetNodeMass(const struct SharedMemoryCommand& clientCmd, struct SharedMemoryStatus& serverStatusOut, char* bufferServerToClient, int bufferSizeInBytes) {
+
+	}
+	
+	bool PhysicsServerCommandProcessor::processAppendNodeAnchor(const struct SharedMemoryCommand& clientCmd, struct SharedMemoryStatus& serverStatusOut, char* bufferServerToClient, int bufferSizeInBytes) {
+
+	}
+	
+#endif
