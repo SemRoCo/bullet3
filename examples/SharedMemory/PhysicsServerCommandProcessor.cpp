@@ -6772,6 +6772,7 @@ bool PhysicsServerCommandProcessor::processInitPoseCommand(const struct SharedMe
 #ifndef SKIP_SOFT_BODY_MULTI_BODY_DYNAMICS_WORLD
 	if (body && body->m_softBody)
 	{
+		
 		if (clientCmd.m_updateFlags & INIT_POSE_HAS_BASE_LINEAR_VELOCITY)
 		{
 			body->m_softBody->setVelocity(baseLinVel);
