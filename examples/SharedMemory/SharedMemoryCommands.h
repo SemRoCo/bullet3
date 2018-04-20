@@ -957,6 +957,27 @@ struct b3StateSerializationArguments
 	int m_stateId;
 };
 
+// SOFTBODY COMMANDS
+struct ApplyNodeForceArgs {
+	int m_bodyUniqueId;
+	int m_nodeIdx;
+	double m_force[MAX_DEGREE_OF_FREEDOM];
+};
+
+struct SetNodeMassArgs {
+	int m_bodyUniqueId;
+	int m_nodeIdx;
+	double m_mass;
+};
+
+struct AppendNodeAnchorArgs {
+	int m_bodyUniqueId;
+	int m_nodeIdx;
+	int m_rigidBodyId;
+	bool m_disableCollision;
+};
+// ~SOFTBODY COMMANDS
+
 struct SharedMemoryCommand
 {
 	int m_type;
@@ -1013,6 +1034,9 @@ struct SharedMemoryCommand
 		struct b3CustomCommand m_customCommandArgs;
 		struct b3StateSerializationArguments m_loadStateArguments;
 		struct RequestCollisionShapeDataArgs m_requestCollisionShapeDataArguments;		
+		struct ApplyNodeForceArgs m_nodeForceArgs;
+		struct SetNodeMassArgs m_nodeMassArgs;
+		struct AppendNodeAnchorArgs m_nodeAnchorArgs;
     };
 };
 
@@ -1094,7 +1118,5 @@ struct SharedMemoryStatus
 };
 
 typedef  struct SharedMemoryStatus SharedMemoryStatus_t;
-
-
 
 #endif //SHARED_MEMORY_COMMANDS_H
