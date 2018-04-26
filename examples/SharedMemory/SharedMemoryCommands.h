@@ -975,6 +975,7 @@ struct AppendNodeAnchorArgs {
 	int m_nodeIdx;
 	int m_rigidBodyId;
 	bool m_disableCollision;
+	float m_influence;
 };
 // ~SOFTBODY COMMANDS
 

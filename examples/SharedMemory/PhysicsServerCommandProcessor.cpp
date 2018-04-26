@@ -6780,14 +6780,13 @@ bool PhysicsServerCommandProcessor::processInitPoseCommand(const struct SharedMe
 						
 		if (clientCmd.m_updateFlags & INIT_POSE_HAS_INITIAL_POSITION)
 		{
-			body->m_softBody->m_initialWorldTransform = btTransform(body->m_softBody->m_initialWorldTransform.getBasis(), basePos);
+			body->m_softBody->transform(btTransform(body->m_softBody->m_initialWorldTransform.getBasis(), basePos));
 			body->m_softBody->setVelocity(baseLinVel);
 		}
 
 		if (clientCmd.m_updateFlags & INIT_POSE_HAS_INITIAL_ORIENTATION)
 		{
-			body->m_softBody->m_initialWorldTransform = btTransform(baseOrn, body->m_softBody->m_initialWorldTransform.getOrigin());
-			body->m_softBody->getWorldTransform().setRotation(baseOrn);
+			body->m_softBody->transform(btTransform(baseOrn, body->m_softBody->m_initialWorldTransform.getOrigin()));
 		}		
 	}
 #endif
@@ -7533,6 +7532,21 @@ bool PhysicsServerCommandProcessor::processRemoveBodyCommand(const struct Shared
 				bodyHandle->m_rigidBody=0;
 				serverCmd.m_type = CMD_REMOVE_BODY_COMPLETED;
 			}
+			if (bodyHandle->m_softBody)
+			{
+				// if (m_data->m_pluginManager.getRenderInterface())
+				// {
+				// 	m_data->m_pluginManager.getRenderInterface()->removeVisualShape(bodyHandle->m_softBody->body->m_collisionObject->getUid());
+				// }
+				serverCmd.m_removeObjectArgs.m_bodyUniqueIds[serverCmd.m_removeObjectArgs.m_numBodies++] = bodyUniqueId;
+
+				//todo: clear all other remaining data...
+				m_data->m_dynamicsWorld->removeSoftBody(bodyHandle->m_softBody);
+				delete bodyHandle->m_softBody;
+				bodyHandle->m_softBody=0;
+				serverCmd.m_type = CMD_REMOVE_BODY_COMPLETED;
+			}
+
 			m_data->m_bodyHandles.freeHandle(bodyUniqueId);
 		}
 
@@ -9215,6 +9229,23 @@ bool PhysicsServerCommandProcessor::processCommand(const struct SharedMemoryComm
 			hasStatus = processCustomCommand(clientCmd,serverStatusOut,bufferServerToClient, bufferSizeInBytes);
 			break;
 		}
+#ifndef SKIP_SOFT_BODY_MULTI_BODY_DYNAMICS_WORLD
+	case CMD_ADD_NODE_FORCE:
+	{
+		hasStatus = processApplyNodeForce(clientCmd, serverStatusOut, bufferServerToClient, bufferSizeInBytes);
+		break;
+	}
+	case CMD_SET_NODE_WEIGHT:
+	{
+		hasStatus = processSetNodeMass(clientCmd, serverStatusOut, bufferServerToClient, bufferSizeInBytes);
+		break;
+	}
+	case CMD_APPEND_NODE_ANCHOR:
+	{
+		hasStatus = processAppendNodeAnchor(clientCmd, serverStatusOut, bufferServerToClient, bufferSizeInBytes);
+		break;
+	}
+#endif
 	default:
 		{
 			BT_PROFILE("CMD_UNKNOWN");
@@ -9654,16 +9685,77 @@ void PhysicsServerCommandProcessor::setVRTeleportOrientation(const btQuaternion&
 
 
 #ifndef SKIP_SOFT_BODY_MULTI_BODY_DYNAMICS_WORLD
-	bool PhysicsServerCommandProcessor::proceessApplyNodeForce(const struct SharedMemoryCommand& clientCmd, struct SharedMemoryStatus& serverStatusOut, char* bufferServerToClient, int bufferSizeInBytes) {
+	bool PhysicsServerCommandProcessor::processApplyNodeForce(const struct SharedMemoryCommand& clientCmd, struct SharedMemoryStatus& serverStatusOut, char* bufferServerToClient, int bufferSizeInBytes) {
 
+		bool hasStatus = true;
+
+		BT_PROFILE("CMD_ADD_NODE_FORCE");
+		SharedMemoryStatus& serverCmd = serverStatusOut;
+						
+		if (clientCmd.m_updateFlags & CMD_ADD_NODE_FORCE)
+		{
+			const ApplyNodeForceArgs& args = clientCmd.m_nodeForceArgs;
+			int bodyUniqueId = args.m_bodyUniqueId;
+			InternalBodyData* body = m_data->m_bodyHandles.getHandle(bodyUniqueId);
+			
+			if (body && body->m_softBody && args.m_nodeIdx < body->m_softBody->m_nodes.size()) {
+				body->m_softBody->addForce(btVector3(args.m_force[0], args.m_force[1], args.m_force[2]), args.m_nodeIdx);
+			} else {
+				hasStatus = false;
+			}
+		}
+
+		serverCmd.m_type = CMD_CLIENT_COMMAND_COMPLETED;
+		return hasStatus;
 	}
 	
 	bool PhysicsServerCommandProcessor::processSetNodeMass(const struct SharedMemoryCommand& clientCmd, struct SharedMemoryStatus& serverStatusOut, char* bufferServerToClient, int bufferSizeInBytes) {
 
+		bool hasStatus = true;
+
+		BT_PROFILE("CMD_SET_NODE_MASS");
+		SharedMemoryStatus& serverCmd = serverStatusOut;
+						
+		if (clientCmd.m_updateFlags & CMD_ADD_NODE_FORCE)
+		{
+			const SetNodeMassArgs& args = clientCmd.m_nodeMassArgs;
+			int bodyUniqueId = args.m_bodyUniqueId;
+			InternalBodyData* body = m_data->m_bodyHandles.getHandle(bodyUniqueId);
+			
+			if (body && body->m_softBody && args.m_nodeIdx < body->m_softBody->m_nodes.size()) {
+				body->m_softBody->setMass(args.m_nodeIdx, args.m_mass);
+			} else {
+				hasStatus = false;
+			}
+		}
+
+		serverCmd.m_type = CMD_CLIENT_COMMAND_COMPLETED;
+		return hasStatus;
 	}
 	
 	bool PhysicsServerCommandProcessor::processAppendNodeAnchor(const struct SharedMemoryCommand& clientCmd, struct SharedMemoryStatus& serverStatusOut, char* bufferServerToClient, int bufferSizeInBytes) {
 
+		bool hasStatus = true;
+
+		BT_PROFILE("CMD_APPEND_NODE_ANCHOR");
+		SharedMemoryStatus& serverCmd = serverStatusOut;
+						
+		if (clientCmd.m_updateFlags & CMD_APPEND_NODE_ANCHOR)
+		{
+			const AppendNodeAnchorArgs& args = clientCmd.m_nodeAnchorArgs;
+			int bodyUniqueId = args.m_bodyUniqueId;
+			InternalBodyData* body = m_data->m_bodyHandles.getHandle(bodyUniqueId);
+			InternalBodyData* anchor = m_data->m_bodyHandles.getHandle(args.m_rigidBodyId);
+
+			if (body && body->m_softBody && args.m_nodeIdx < body->m_softBody->m_nodes.size() && anchor && anchor->m_rigidBody) {
+				body->m_softBody->appendAnchor(args.m_nodeIdx, anchor->m_rigidBody, args.m_disableCollision, args.m_influence);
+			} else {
+				hasStatus = false;
+			}
+		}
+
+		serverCmd.m_type = CMD_CLIENT_COMMAND_COMPLETED;
+		return hasStatus;
 	}
 	
 #endif

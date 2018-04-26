@@ -25,6 +25,8 @@ protected:
 	bool processVisualShapeData(const struct SharedMemoryCommand& orgCommand);
 	
     void processBodyJointInfo(int bodyUniqueId, const struct SharedMemoryStatus& serverCmd);
+
+	void processClothInfo(int bodyUniqueId, const SharedMemoryStatus& serverCmd);
     
 	void postProcessStatus(const struct SharedMemoryStatus& serverCmd);
 
@@ -72,6 +74,25 @@ public:
 	
 	virtual int getUserConstraintId(int serialIndex) const;
     
+	// SOFTBODIES
+	virtual int getNumSoftBodies() const;
+
+	virtual int getSoftBodyUniqueId(int serialIndex) const;
+
+	virtual bool getSoftBodyConfig(int bodyUniqueId, Bullet::SoftBodyConfigData& config);// const;
+
+	virtual int getNumNodes(int bodyUniqueId) const;
+
+	virtual int getNumAnchors(int bodyUniqueId) const;
+
+	virtual int getNumLinks(int bodyUniqueId) const;
+
+	virtual bool getSoftBodyJointInfo(int bodyUniqueId, int jointIndex, Bullet::btSoftBodyJointData& info);// const;
+
+	virtual bool getAnchor(int bodyUniqueId, int anchorIndex, Bullet::SoftRigidAnchorData& info);// const;
+
+	virtual bool getSoftBodyLink(int bodyUniqueId, int linkIndex, Bullet::SoftBodyLinkData& info);// const;
+
 	///todo: move this out of the
     virtual void setSharedMemoryKey(int key);
 

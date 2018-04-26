@@ -1405,7 +1405,7 @@ static PyObject* pybullet_loadSDF(PyObject* self, PyObject* args, PyObject* keyw
 	return pylist;
 }
 
-//#ifndef SKIP_SOFT_BODY_MULTI_BODY_DYNAMICS_WORLD
+#ifndef SKIP_SOFT_BODY_MULTI_BODY_DYNAMICS_WORLD
 // Load a softbody from an obj file
 static PyObject* pybullet_loadSoftBody(PyObject* self, PyObject* args, PyObject* keywds)
 {
@@ -1464,7 +1464,7 @@ static PyObject* pybullet_loadSoftBody(PyObject* self, PyObject* args, PyObject*
 	}
 	return PyLong_FromLong(bodyUniqueId);
 }
-//#endif
+#endif
 
 // Reset the simulation to remove all loaded objects
 static PyObject* pybullet_resetSimulation(PyObject* self, PyObject* args, PyObject* keywds)
@@ -8334,6 +8334,33 @@ static PyMethodDef SpamMethods[] = {
 #ifndef SKIP_SOFT_BODY_MULTI_BODY_DYNAMICS_WORLD
 	{"loadSoftBody", (PyCFunction)pybullet_loadSoftBody, METH_VARARGS | METH_KEYWORDS,
 	 "Load a softbody from an obj file."},
+	
+	{"getNumSoftBodies", (PyCFunction)pybullet_getNumSoftBodies, METH_VARARGS | METH_KEYWORDS,
+	 "Returns the number of softbodies in the world."},
+	
+	{"getSoftBodyUniqueId", (PyCFunction)pybullet_getSoftBodyUniqueId, METH_VARARGS | METH_KEYWORDS,
+	 "Returns the Id of the i-th soft body."},
+	
+	{"getSoftBodyConfig", (PyCFunction)pybullet_getSoftBodyConfig, METH_VARARGS | METH_KEYWORDS,
+	 "Returns the soft body's configuration."},
+	
+	{"getNumNodes", (PyCFunction)pybullet_getNumNodes, METH_VARARGS | METH_KEYWORDS,
+	 "Returns the number of nodes connected to a soft body."},
+	
+	{"getNumAnchors", (PyCFunction)pybullet_getNumAnchors, METH_VARARGS | METH_KEYWORDS,
+	 "Returns the number of anchors attached to a soft body."},
+	
+	{"getNumLinks", (PyCFunction)pybullet_getNumLinks, METH_VARARGS | METH_KEYWORDS,
+	 "Returns the number of links in a soft body."},
+	
+	{"getSoftBodyJointInfo", (PyCFunction)pybullet_getSoftBodyJointInfo, METH_VARARGS | METH_KEYWORDS,
+	 "Returns the info of a soft body joint."},
+
+	{"getAnchor", (PyCFunction)pybullet_getAnchor, METH_VARARGS | METH_KEYWORDS,
+	 "Returns the info of a soft body anchor."},
+
+	{"getSoftBodyLink", (PyCFunction)pybullet_getSoftBodyLink, METH_VARARGS | METH_KEYWORDS,
+	 "Returns the info of a soft body link."},
 #endif
 	{"loadBullet", (PyCFunction)pybullet_loadBullet, METH_VARARGS | METH_KEYWORDS,
 	 "Load a world from a .bullet file."},
