@@ -86,6 +86,44 @@ public:
 
 	virtual void setTimeOut(double timeOutInSeconds);
 	virtual double getTimeOut() const;
+
+#ifndef SKIP_SOFT_BODY_MULTI_BODY_DYNAMICS_WORLD
+    virtual int getNumSoftBodies() const {
+        return 0;
+    }
+
+	virtual int getSoftBodyUniqueId(int serialIndex) const {
+        return -1;
+    }
+
+	virtual bool getSoftBodyConfig(int bodyUniqueId, struct b3SoftBodyConfigData& config) {
+        return false;
+    }
+
+	virtual int getNumNodes(int bodyUniqueId) const {
+        return 0;
+    }
+
+	virtual int getNumAnchors(int bodyUniqueId) const {
+        return 0;
+    }
+
+	virtual int getNumLinks(int bodyUniqueId) const {
+        return 0;
+    }
+
+	virtual bool getSoftBodyJointInfo(int bodyUniqueId, int jointIndex, struct b3SoftBodyJointData& info) {
+        return false;
+    }
+
+	virtual bool getAnchor(int bodyUniqueId, int anchorIndex, struct b3SoftRigidAnchorData& info) {
+        return false;
+    }
+
+	virtual bool getSoftBodyLink(int bodyUniqueId, int linkIndex, struct b3SoftBodyLinkData& info) {
+        return false;
+    }
+#endif
 };
 
 #endif //PHYSICS_LOOP_BACK_H

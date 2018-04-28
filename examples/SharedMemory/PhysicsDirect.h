@@ -75,6 +75,7 @@ public:
 	virtual int getUserConstraintId(int serialIndex) const;
     
 	// SOFTBODIES
+#ifndef SKIP_SOFT_BODY_MULTI_BODY_DYNAMICS_WORLD
 	virtual int getNumSoftBodies() const;
 
 	virtual int getSoftBodyUniqueId(int serialIndex) const;
@@ -92,6 +93,7 @@ public:
 	virtual bool getAnchor(int bodyUniqueId, int anchorIndex, struct b3SoftRigidAnchorData& info);// const;
 
 	virtual bool getSoftBodyLink(int bodyUniqueId, int linkIndex, struct b3SoftBodyLinkData& info);// const;
+#endif
 
 	///todo: move this out of the
     virtual void setSharedMemoryKey(int key);

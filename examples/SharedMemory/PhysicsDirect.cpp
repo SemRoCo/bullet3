@@ -1308,7 +1308,7 @@ bool PhysicsDirect::getSoftBodyJointInfo(int bodyUniqueId, int jointIndex, b3Sof
 		Bullet::btSoftBodyJointData joint = (*clothInfoPtr)->m_joints[jointIndex];
 		info.m_bodyA = ((btRigidBody*)joint.m_bodyA)->getUserIndex2();
 		info.m_bodyB = ((btRigidBody*)joint.m_bodyB)->getUserIndex2();
-		for (int i = 0; i < MAX_DEGREE_OF_FREEDOM; i++) {
+		for (int i = 0; i < 3; i++) {
 			info.m_refs[i] = joint.m_refs[0].m_floats[i];
 			info.m_refs[3+i] = joint.m_refs[1].m_floats[i];
 			info.m_relPosition[i] = joint.m_relPosition[0].m_floats[i];
@@ -1333,8 +1333,8 @@ bool PhysicsDirect::getAnchor(int bodyUniqueId, int anchorIndex, b3SoftRigidAnch
 	if (clothInfoPtr && *clothInfoPtr && anchorIndex >= 0 && anchorIndex < (*clothInfoPtr)->m_anchors.size()) {
 		Bullet::SoftRigidAnchorData anchor = (*clothInfoPtr)->m_anchors[anchorIndex];
 		for (int i = 0; i < 9; i++)
-			info.m_c0[i] = anchor.m_c0;
-		for (int i = 0; i < MAX_DEGREE_OF_FREEDOM; i++) {
+			info.m_c0[i] = anchor.m_c0.m_el[i/3].m_floats[i%3];
+		for (int i = 0; i < 3; i++) {
 			info.m_c1[i] = anchor.m_c1.m_floats[i];
 			info.m_localFrame[i] = anchor.m_localFrame.m_floats[i];
 		}

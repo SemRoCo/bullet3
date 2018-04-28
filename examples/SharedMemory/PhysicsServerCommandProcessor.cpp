@@ -9687,12 +9687,11 @@ void PhysicsServerCommandProcessor::setVRTeleportOrientation(const btQuaternion&
 #ifndef SKIP_SOFT_BODY_MULTI_BODY_DYNAMICS_WORLD
 	bool PhysicsServerCommandProcessor::processApplyNodeForce(const struct SharedMemoryCommand& clientCmd, struct SharedMemoryStatus& serverStatusOut, char* bufferServerToClient, int bufferSizeInBytes) {
 
-		bool hasStatus = true;
-
 		BT_PROFILE("CMD_ADD_NODE_FORCE");
 		SharedMemoryStatus& serverCmd = serverStatusOut;
+		serverCmd.m_type = CMD_ADD_NODE_FORCE_FAILED;
 						
-		if (clientCmd.m_updateFlags & CMD_ADD_NODE_FORCE)
+		if (clientCmd.m_type == CMD_ADD_NODE_FORCE)
 		{
 			const ApplyNodeForceArgs& args = clientCmd.m_nodeForceArgs;
 			int bodyUniqueId = args.m_bodyUniqueId;
@@ -9701,22 +9700,20 @@ void PhysicsServerCommandProcessor::setVRTeleportOrientation(const btQuaternion&
 			if (body && body->m_softBody && args.m_nodeIdx < body->m_softBody->m_nodes.size()) {
 				body->m_softBody->addForce(btVector3(args.m_force[0], args.m_force[1], args.m_force[2]), args.m_nodeIdx);
 			} else {
-				hasStatus = false;
+				serverCmd.m_type = CMD_ADD_NODE_FORCE_COMPLETED;
 			}
 		}
 
-		serverCmd.m_type = CMD_CLIENT_COMMAND_COMPLETED;
-		return hasStatus;
+		return true;
 	}
 	
 	bool PhysicsServerCommandProcessor::processSetNodeMass(const struct SharedMemoryCommand& clientCmd, struct SharedMemoryStatus& serverStatusOut, char* bufferServerToClient, int bufferSizeInBytes) {
 
-		bool hasStatus = true;
-
 		BT_PROFILE("CMD_SET_NODE_MASS");
 		SharedMemoryStatus& serverCmd = serverStatusOut;
+		serverCmd.m_type = CMD_SET_NODE_WEIGHT_FAILED;
 						
-		if (clientCmd.m_updateFlags & CMD_ADD_NODE_FORCE)
+		if (clientCmd.m_type == CMD_SET_NODE_WEIGHT)
 		{
 			const SetNodeMassArgs& args = clientCmd.m_nodeMassArgs;
 			int bodyUniqueId = args.m_bodyUniqueId;
@@ -9724,38 +9721,35 @@ void PhysicsServerCommandProcessor::setVRTeleportOrientation(const btQuaternion&
 			
 			if (body && body->m_softBody && args.m_nodeIdx < body->m_softBody->m_nodes.size()) {
 				body->m_softBody->setMass(args.m_nodeIdx, args.m_mass);
-			} else {
-				hasStatus = false;
+				serverCmd.m_type = CMD_SET_NODE_WEIGHT_COMPLETED;
 			}
 		}
 
-		serverCmd.m_type = CMD_CLIENT_COMMAND_COMPLETED;
-		return hasStatus;
+		return true;
 	}
 	
 	bool PhysicsServerCommandProcessor::processAppendNodeAnchor(const struct SharedMemoryCommand& clientCmd, struct SharedMemoryStatus& serverStatusOut, char* bufferServerToClient, int bufferSizeInBytes) {
 
-		bool hasStatus = true;
-
 		BT_PROFILE("CMD_APPEND_NODE_ANCHOR");
 		SharedMemoryStatus& serverCmd = serverStatusOut;
+		serverCmd.m_type = CMD_APPEND_NODE_ANCHOR_FAILED;
 						
-		if (clientCmd.m_updateFlags & CMD_APPEND_NODE_ANCHOR)
+		if (clientCmd.m_type == CMD_APPEND_NODE_ANCHOR)
 		{
 			const AppendNodeAnchorArgs& args = clientCmd.m_nodeAnchorArgs;
 			int bodyUniqueId = args.m_bodyUniqueId;
 			InternalBodyData* body = m_data->m_bodyHandles.getHandle(bodyUniqueId);
 			InternalBodyData* anchor = m_data->m_bodyHandles.getHandle(args.m_rigidBodyId);
 
+			printf("  Soft body %d: %x\n  Rigid body %d: %x\n  Node idx: %d\n  Soft body's body: %x\n  Rigid body's body: %x\n", bodyUniqueId, body, args.m_rigidBodyId, anchor, args.m_nodeIdx, body->m_softBody, anchor->m_rigidBody);
+
 			if (body && body->m_softBody && args.m_nodeIdx < body->m_softBody->m_nodes.size() && anchor && anchor->m_rigidBody) {
 				body->m_softBody->appendAnchor(args.m_nodeIdx, anchor->m_rigidBody, args.m_disableCollision, args.m_influence);
-			} else {
-				hasStatus = false;
-			}
+				serverCmd.m_type = CMD_APPEND_NODE_ANCHOR_COMPLETED;
+			} 
 		}
 
-		serverCmd.m_type = CMD_CLIENT_COMMAND_COMPLETED;
-		return hasStatus;
+		return true;
 	}
 	
 #endif

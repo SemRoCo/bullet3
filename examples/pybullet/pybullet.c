@@ -1525,7 +1525,41 @@ static PyObject* pybullet_getSoftBodyConfig(PyObject* self, PyObject* args, PyOb
 		return NULL;
 	}
 	
-	return PyInt_FromLong(b3GetNumSoftBodies(sm));
+	struct b3SoftBodyConfigData info;
+	if (!b3GetSoftBodyConfig(sm, bodyUniqueId, &info)) {
+		Py_INCREF(Py_None);
+		return Py_None;	
+	}
+
+	PyObject* pyConfig = PyTuple_New(26);
+	PyTuple_SetItem(pyConfig, 0, PyInt_FromLong(info.m_aeroModel));
+	PyTuple_SetItem(pyConfig, 1, PyFloat_FromDouble(info.m_baumgarte));
+	PyTuple_SetItem(pyConfig, 2, PyFloat_FromDouble(info.m_damping));
+	PyTuple_SetItem(pyConfig, 3, PyFloat_FromDouble(info.m_drag));
+	PyTuple_SetItem(pyConfig, 4, PyFloat_FromDouble(info.m_lift));
+	PyTuple_SetItem(pyConfig, 5, PyFloat_FromDouble(info.m_pressure));
+	PyTuple_SetItem(pyConfig, 6, PyFloat_FromDouble(info.m_volume));
+	PyTuple_SetItem(pyConfig, 7, PyFloat_FromDouble(info.m_dynamicFriction));
+	PyTuple_SetItem(pyConfig, 8, PyFloat_FromDouble(info.m_poseMatch));
+	PyTuple_SetItem(pyConfig, 9, PyFloat_FromDouble(info.m_rigidContactHardness));
+	PyTuple_SetItem(pyConfig, 10, PyFloat_FromDouble(info.m_kineticContactHardness));
+	PyTuple_SetItem(pyConfig, 11, PyFloat_FromDouble(info.m_softContactHardness));
+	PyTuple_SetItem(pyConfig, 12, PyFloat_FromDouble(info.m_anchorHardness));
+	PyTuple_SetItem(pyConfig, 13, PyFloat_FromDouble(info.m_softRigidClusterHardness));
+	PyTuple_SetItem(pyConfig, 14, PyFloat_FromDouble(info.m_softKineticClusterHardness));
+	PyTuple_SetItem(pyConfig, 15, PyFloat_FromDouble(info.m_softSoftClusterHardness));
+	PyTuple_SetItem(pyConfig, 16, PyFloat_FromDouble(info.m_softRigidClusterImpulseSplit));
+	PyTuple_SetItem(pyConfig, 17, PyFloat_FromDouble(info.m_softKineticClusterImpulseSplit));
+	PyTuple_SetItem(pyConfig, 18, PyFloat_FromDouble(info.m_softSoftClusterImpulseSplit));
+	PyTuple_SetItem(pyConfig, 19, PyFloat_FromDouble(info.m_maxVolume));
+	PyTuple_SetItem(pyConfig, 20, PyFloat_FromDouble(info.m_timeScale));
+	PyTuple_SetItem(pyConfig, 21, PyInt_FromLong(info.m_velocityIterations));
+	PyTuple_SetItem(pyConfig, 22, PyInt_FromLong(info.m_positionIterations));
+	PyTuple_SetItem(pyConfig, 23, PyInt_FromLong(info.m_driftIterations));
+	PyTuple_SetItem(pyConfig, 24, PyInt_FromLong(info.m_clusterIterations));
+	PyTuple_SetItem(pyConfig, 25, PyInt_FromLong(info.m_collisionFlags));
+
+	return pyConfig;
 }
 
 static PyObject* pybullet_getNumNodes(PyObject* self, PyObject* args, PyObject* keywds) {
@@ -1610,18 +1644,58 @@ static PyObject* pybullet_getSoftBodyJointInfo(PyObject* self, PyObject* args, P
 		return NULL;
 	}
 
-	b3SoftBodyJointData info;
-	b3GetSoftBodyJointInfo(sm, bodyUniqueId, jointIndex, info);
-	
-	
-	PyObject* pyLinkStateWorldPosition = PyTuple_New(3);
-	for (i = 0; i < 3; ++i)
-	{
-		PyTuple_SetItem(pyLinkStateWorldPosition, i,
-						PyFloat_FromDouble(linkState.m_worldPosition[i]));
+	struct b3SoftBodyJointData info;
+	if (!b3GetSoftBodyJointInfo(sm, bodyUniqueId, jointIndex, &info)) {
+		Py_INCREF(Py_None);
+		return Py_None;	
 	}
+
+
+	PyObject* pyJointInfo = PyTuple_New(12);
+	PyTuple_SetItem(pyJointInfo, 0, PyInt_FromLong(info.m_bodyA));
+	PyTuple_SetItem(pyJointInfo, 1, PyInt_FromLong(info.m_bodyB));	
+
+	PyObject* pyJointRefs = PyTuple_New(2);
 	
-	return PyInt_FromLong();
+	{
+		PyObject* pyJointRef1 = PyTuple_New(3);
+		PyObject* pyJointRef2 = PyTuple_New(3);
+		for(int i = 0; i < 3; ++i) {
+			PyTuple_SetItem(pyJointRef1, i, PyFloat_FromDouble(info.m_refs[i]));
+			PyTuple_SetItem(pyJointRef2, i, PyFloat_FromDouble(info.m_refs[3+i]));
+		}
+		
+		PyTuple_SetItem(pyJointRefs, 0, pyJointRef1);
+		PyTuple_SetItem(pyJointRefs, 1, pyJointRef2);
+	}
+
+	PyTuple_SetItem(pyJointInfo, 2, pyJointRefs);
+	PyTuple_SetItem(pyJointInfo, 3, PyFloat_FromDouble(info.m_cfm));
+	PyTuple_SetItem(pyJointInfo, 4, PyFloat_FromDouble(info.m_erp));
+	PyTuple_SetItem(pyJointInfo, 5, PyFloat_FromDouble(info.m_split));
+	PyTuple_SetItem(pyJointInfo, 6, PyInt_FromLong(info.m_delete));
+
+	PyObject* pyRelPositions = PyTuple_New(2);
+
+	{
+		PyObject* pyJointRP1 = PyTuple_New(3);
+		PyObject* pyJointRP2 = PyTuple_New(3);
+		for(int i = 0; i < 3; ++i) {
+			PyTuple_SetItem(pyJointRP1, i, PyFloat_FromDouble(info.m_relPosition[i]));
+			PyTuple_SetItem(pyJointRP2, i, PyFloat_FromDouble(info.m_relPosition[3+i]));
+		}
+		
+		PyTuple_SetItem(pyRelPositions, 0, pyJointRP1);
+		PyTuple_SetItem(pyRelPositions, 1, pyJointRP2);
+	}
+
+	PyTuple_SetItem(pyJointInfo,  7, pyRelPositions);
+	PyTuple_SetItem(pyJointInfo,  8, PyInt_FromLong(info.m_bodyAtype));
+	PyTuple_SetItem(pyJointInfo,  9, PyInt_FromLong(info.m_bodyBtype));
+	PyTuple_SetItem(pyJointInfo, 10, PyInt_FromLong(info.m_jointType));
+	PyTuple_SetItem(pyJointInfo, 11, PyInt_FromLong(info.m_pad));
+
+	return pyJointInfo;
 }
 
 static PyObject* pybullet_getAnchor(PyObject* self, PyObject* args, PyObject* keywds) {
@@ -1643,13 +1717,175 @@ static PyObject* pybullet_getAnchor(PyObject* self, PyObject* args, PyObject* ke
 		return NULL;
 	}
 	
-	b3GetAnchor(sm, bodyUniqueId, anchorIndex, );
+	struct b3SoftRigidAnchorData info;
+	if (!b3GetAnchor(sm, bodyUniqueId, anchorIndex, &info)) {
+		Py_INCREF(Py_None);
+		return Py_None;	
+	}
+
+	PyObject* pyAnchor = PyTuple_New(5);
+	PyObject* c0 = PyTuple_New(9);
+	for (int i = 0; i < 9; i++)
+		PyTuple_SetItem(c0, i, PyFloat_FromDouble(info.m_c0[i]));
+	PyTuple_SetItem(pyAnchor, 0, c0);
+
+	PyObject* c1 = PyTuple_New(3);
+	for (int i = 0; i < 3; i++)
+		PyTuple_SetItem(c1, i, PyFloat_FromDouble(info.m_c1[i]));
+	PyTuple_SetItem(pyAnchor, 1, c1);
+
+	PyObject* localFrame = PyTuple_New(3);
+	for (int i = 0; i < 3; i++)
+		PyTuple_SetItem(localFrame, i, PyFloat_FromDouble(info.m_localFrame[i]));
+	PyTuple_SetItem(pyAnchor, 2, localFrame);
+
+	PyTuple_SetItem(pyAnchor, 3, PyInt_FromLong(info.m_nodeIndex));
+	PyTuple_SetItem(pyAnchor, 4, PyFloat_FromDouble(info.m_c2));
+	
+	return pyAnchor;
 }
 
 static PyObject* pybullet_getSoftBodyLink(PyObject* self, PyObject* args, PyObject* keywds) {
+	b3PhysicsClientHandle sm = 0;
+	PyObject* val=0;
+	int physicsClientId = 0;
+	int bodyUniqueId = -1;
+	int linkIndex = -1;
+	static char* kwlist[] = {"bodyUniqueId", "linkIndex", "physicsClientId", NULL};
+
+	if (!PyArg_ParseTupleAndKeywords(args, keywds, "ii|i", kwlist, &bodyUniqueId, &physicsClientId))
+	{
+		return NULL;
+	}
+	sm = getPhysicsClient(physicsClientId);
+	if (sm == 0)
+	{
+		PyErr_SetString(SpamError, "Not connected to physics server.");
+		return NULL;
+	}
+	
+	struct b3SoftBodyLinkData info;
+	if (!b3GetSoftBodyLink(sm, bodyUniqueId, linkIndex, &info)) {
+		Py_INCREF(Py_None);
+		return Py_None;	
+	}
+
+	PyObject* pyLink = PyTuple_New(3);
+	PyObject* indices = PyTuple_New(2);
+	PyTuple_SetItem(indices, 0, PyInt_FromLong(info.m_nodeIndices[0]));
+	PyTuple_SetItem(indices, 1, PyInt_FromLong(info.m_nodeIndices[1]));
+	PyTuple_SetItem(pyLink, 0, indices);
+	PyTuple_SetItem(pyLink, 1, PyFloat_FromDouble(info.m_restLength));
+	PyTuple_SetItem(pyLink, 2, PyInt_FromLong(info.m_bbending));
+	
+	return pyLink; 
+}
+
+static PyObject* pybullet_applyNodeForce(PyObject* self, PyObject* args, PyObject* keywds) {
+	b3PhysicsClientHandle sm = 0;
+	int physicsClientId = 0;
+	int bodyUniqueId = -1;
+	int nodeIndex = -1;
+	PyObject* pyForceVec3 = 0;
+	static char* kwlist[] = {"bodyUniqueId", "nodeIndex", "force", "physicsClientId", NULL};
+
+	if (!PyArg_ParseTupleAndKeywords(args, keywds, "ii0|i", kwlist, &bodyUniqueId, &nodeIndex, &pyForceVec3, &physicsClientId))
+	{
+		return NULL;
+	}
+	sm = getPhysicsClient(physicsClientId);
+	if (sm == 0)
+	{
+		PyErr_SetString(SpamError, "Not connected to physics server.");
+		return NULL;
+	}
+	
+	if (PySequence_Size(pyForceVec3) == 3) {
+		int byteSizeVec3 =  sizeof(double) * 3;
+		double* force = (double*)malloc(byteSizeVec3);
+
+		pybullet_internalSetVectord(pyForceVec3, force);
+
+		b3SharedMemoryCommandHandle command = b3ApplyNodeForceCommand(sm, bodyUniqueId, nodeIndex, force);
+		b3SharedMemoryStatusHandle statusHandle = b3SubmitClientCommandAndWaitStatus(sm, command);
+		int statusType = b3GetStatusType(statusHandle);
+		if (statusType != CMD_ADD_NODE_FORCE_COMPLETED)
+		{
+			PyErr_SetString(SpamError, "Applying force to soft body node failed.");
+			return NULL;
+		}
+		Py_INCREF(Py_None);
+		return Py_None;
+	}
+
+	PyErr_SetString(SpamError, "Invalid size of force tuple.");
+	return NULL;
+}
+
+static PyObject* pybullet_setNodeMass(PyObject* self, PyObject* args, PyObject* keywds) {
+	b3PhysicsClientHandle sm = 0;
+	int physicsClientId = 0;
+	int bodyUniqueId = -1;
+	int nodeIndex = -1;
+	double nodeMass = 0;
+	static char* kwlist[] = {"bodyUniqueId", "nodeIndex", "mass", "physicsClientId", NULL};
+
+	if (!PyArg_ParseTupleAndKeywords(args, keywds, "iid|i", kwlist, &bodyUniqueId, &nodeIndex, &nodeMass, &physicsClientId))
+	{
+		return NULL;
+	}
+	sm = getPhysicsClient(physicsClientId);
+	if (sm == 0)
+	{
+		PyErr_SetString(SpamError, "Not connected to physics server.");
+		return NULL;
+	}
+
+	b3SharedMemoryCommandHandle command = b3SetNodeMassCommand(sm, bodyUniqueId, nodeIndex, nodeMass);
+	b3SharedMemoryStatusHandle statusHandle = b3SubmitClientCommandAndWaitStatus(sm, command);
+	int statusType = b3GetStatusType(statusHandle);
+	if (statusType != CMD_SET_NODE_WEIGHT_COMPLETED)
+	{
+		PyErr_SetString(SpamError, "Setting mass of soft body node failed.");
+		return NULL;
+	}
 	Py_INCREF(Py_None);
 	return Py_None;
 }
+
+static PyObject* pybullet_appendAnchor(PyObject* self, PyObject* args, PyObject* keywds) {
+	b3PhysicsClientHandle sm = 0;
+	int physicsClientId = 0;
+	int bodyUniqueId = -1;
+	int rigidBodyId = -1;
+	int nodeIndex = -1;
+	int disableCollision = 1;
+	double influence = 1;
+	static char* kwlist[] = {"bodyUniqueId", "rigidBodyId", "nodeIndex", "disableCollision", "influence", "physicsClientId", NULL};
+
+	if (!PyArg_ParseTupleAndKeywords(args, keywds, "iii|idi", kwlist, &bodyUniqueId, &rigidBodyId, &nodeIndex, &disableCollision, &influence, &physicsClientId))
+	{
+		return NULL;
+	}
+	sm = getPhysicsClient(physicsClientId);
+	if (sm == 0)
+	{
+		PyErr_SetString(SpamError, "Not connected to physics server.");
+		return NULL;
+	}
+
+	b3SharedMemoryCommandHandle command = b3AppendNodeAnchorCommand(sm, bodyUniqueId, rigidBodyId, nodeIndex, disableCollision, influence);
+	b3SharedMemoryStatusHandle statusHandle = b3SubmitClientCommandAndWaitStatus(sm, command);
+	int statusType = b3GetStatusType(statusHandle);
+	if (statusType != CMD_APPEND_NODE_ANCHOR_COMPLETED)
+	{
+		PyErr_SetString(SpamError, "Appending anchor to soft body node failed.");
+		return NULL;
+	}
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
 
 #endif
 
@@ -8548,6 +8784,15 @@ static PyMethodDef SpamMethods[] = {
 
 	{"getSoftBodyLink", (PyCFunction)pybullet_getSoftBodyLink, METH_VARARGS | METH_KEYWORDS,
 	 "Returns the info of a soft body link."},
+
+	{"applyNodeForce", (PyCFunction)pybullet_applyNodeForce, METH_VARARGS | METH_KEYWORDS,
+	 "Applies a force to a soft body's node."},
+
+	{"setNodeMass", (PyCFunction)pybullet_setNodeMass, METH_VARARGS | METH_KEYWORDS,
+	 "Sets the mass of a soft body's node."},
+
+	{"appendAnchor", (PyCFunction)pybullet_appendAnchor, METH_VARARGS | METH_KEYWORDS,
+	 "Adds an anchor to a soft body's node."},
 #endif
 	{"loadBullet", (PyCFunction)pybullet_loadBullet, METH_VARARGS | METH_KEYWORDS,
 	 "Load a world from a .bullet file."},

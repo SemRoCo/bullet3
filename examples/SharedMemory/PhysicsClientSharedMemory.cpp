@@ -1285,6 +1285,21 @@ const SharedMemoryStatus* PhysicsClientSharedMemory::processServerStatus() {
 				{
 					break;
 				}
+			case CMD_ADD_NODE_FORCE_COMPLETED:
+				break;
+			case CMD_ADD_NODE_FORCE_FAILED:
+				b3Warning("apply node force failed");
+				break;
+			case CMD_APPEND_NODE_ANCHOR_COMPLETED:
+				break;
+			case CMD_APPEND_NODE_ANCHOR_FAILED:
+				b3Warning("append node anchor failed");
+				break;
+			case CMD_SET_NODE_WEIGHT_COMPLETED:
+				break;
+			case CMD_SET_NODE_WEIGHT_FAILED:
+				b3Warning("set node weight failed");
+				break;
             default: {
                 b3Error("Unknown server status %d\n", serverCmd.m_type);
                 btAssert(0);

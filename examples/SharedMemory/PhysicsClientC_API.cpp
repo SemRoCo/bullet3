@@ -4476,6 +4476,59 @@ B3_SHARED_API void b3InvertTransform(const double pos[3], const double orn[4], d
 }
 
 #ifndef SKIP_SOFT_BODY_MULTI_BODY_DYNAMICS_WORLD
+
+B3_SHARED_API   b3SharedMemoryCommandHandle b3ApplyNodeForceCommand(b3PhysicsClientHandle physClient, int bodyUniqueId, int nodeIndex, const float force[/*3*/]) {
+	PhysicsClient* cl = (PhysicsClient*)physClient;
+	b3Assert(cl);
+	b3Assert(cl->canSubmitCommand());
+	struct SharedMemoryCommand* command = cl->getAvailableSharedMemoryCommand();
+	b3Assert(command);
+
+	command->m_type = CMD_ADD_NODE_FORCE;
+	command->m_updateFlags = 0;
+	command->m_nodeForceArgs.m_bodyUniqueId = bodyUniqueId;
+	command->m_nodeForceArgs.m_nodeIdx = nodeIndex;
+	command->m_nodeForceArgs.m_force[0] = force[0];
+	command->m_nodeForceArgs.m_force[1] = force[1];
+	command->m_nodeForceArgs.m_force[2] = force[2];
+
+	return (b3SharedMemoryCommandHandle)command;
+}
+
+B3_SHARED_API   b3SharedMemoryCommandHandle b3SetNodeMassCommand(b3PhysicsClientHandle physClient, int bodyUniqueId, int nodeIndex, float mass) {
+	PhysicsClient* cl = (PhysicsClient*)physClient;
+	b3Assert(cl);
+	b3Assert(cl->canSubmitCommand());
+	struct SharedMemoryCommand* command = cl->getAvailableSharedMemoryCommand();
+	b3Assert(command);
+
+	command->m_type = CMD_SET_NODE_WEIGHT;
+	command->m_updateFlags = 0;
+	command->m_nodeMassArgs.m_bodyUniqueId = bodyUniqueId;
+	command->m_nodeMassArgs.m_nodeIdx = nodeIndex;
+	command->m_nodeMassArgs.m_mass = mass;
+
+	return (b3SharedMemoryCommandHandle)command;
+}
+
+B3_SHARED_API   b3SharedMemoryCommandHandle b3AppendNodeAnchorCommand(b3PhysicsClientHandle physClient, int bodyUniqueId, int rigidBodyId, int nodeIndex, int disableCollision, float influence) {
+	PhysicsClient* cl = (PhysicsClient*)physClient;
+	b3Assert(cl);
+	b3Assert(cl->canSubmitCommand());
+	struct SharedMemoryCommand* command = cl->getAvailableSharedMemoryCommand();
+	b3Assert(command);
+
+	command->m_type = CMD_APPEND_NODE_ANCHOR;
+	command->m_updateFlags = 0;
+	command->m_nodeAnchorArgs.m_bodyUniqueId = bodyUniqueId;
+	command->m_nodeAnchorArgs.m_rigidBodyId = rigidBodyId;
+	command->m_nodeAnchorArgs.m_nodeIdx = nodeIndex;
+	command->m_nodeAnchorArgs.m_disableCollision = disableCollision != 0;
+	command->m_nodeAnchorArgs.m_influence = influence;
+
+	return (b3SharedMemoryCommandHandle)command;
+}
+
 B3_SHARED_API   int b3GetNumSoftBodies(b3PhysicsClientHandle physClient) {
 	PhysicsClient* cl = (PhysicsClient*)physClient;
 	b3Assert(cl);
@@ -4496,14 +4549,14 @@ B3_SHARED_API   int b3GetSoftBodyUniqueId(b3PhysicsClientHandle physClient, int 
 	return -1;
 }
 
-B3_SHARED_API   int b3GetSoftBodyConfig(b3PhysicsClientHandle physClient, int bodyUniqueId, b3SoftBodyConfigData& config) {
+B3_SHARED_API   int b3GetSoftBodyConfig(b3PhysicsClientHandle physClient, int bodyUniqueId, b3SoftBodyConfigData* config) {
 	PhysicsClient* cl = (PhysicsClient*)physClient;
 	b3Assert(cl);
 	if (cl)
 	{
-		return cl->getSoftBodyConfig(bodyUniqueId, config);
+		return cl->getSoftBodyConfig(bodyUniqueId, *config);
 	}
-	return -1;
+	return 0;
 }
 
 B3_SHARED_API   int b3GetNumNodes(b3PhysicsClientHandle physClient, int bodyUniqueId) {
@@ -4536,30 +4589,33 @@ B3_SHARED_API   int b3GetNumLinks(b3PhysicsClientHandle physClient, int bodyUniq
 	return -1;
 }
 
-B3_SHARED_API   void b3GetSoftBodyJointInfo(b3PhysicsClientHandle physClient, int bodyUniqueId, int jointIndex, b3SoftBodyJointData& info) {
+B3_SHARED_API   int b3GetSoftBodyJointInfo(b3PhysicsClientHandle physClient, int bodyUniqueId, int jointIndex, b3SoftBodyJointData* info) {
 	PhysicsClient* cl = (PhysicsClient*)physClient;
 	b3Assert(cl);
 	if (cl)
 	{
-		cl->getSoftBodyJointInfo(bodyUniqueId, jointIndex, info);
+		return cl->getSoftBodyJointInfo(bodyUniqueId, jointIndex, *info);
 	}
+	return 0;
 }
 
-B3_SHARED_API   void b3GetAnchor(b3PhysicsClientHandle physClient, int bodyUniqueId, int anchorIndex, b3SoftRigidAnchorData& info) {
+B3_SHARED_API   int b3GetAnchor(b3PhysicsClientHandle physClient, int bodyUniqueId, int anchorIndex, b3SoftRigidAnchorData* info) {
 	PhysicsClient* cl = (PhysicsClient*)physClient;
 	b3Assert(cl);
 	if (cl)
 	{
-		cl->getAnchor(bodyUniqueId, anchorIndex, info);
+		return cl->getAnchor(bodyUniqueId, anchorIndex, *info);
 	}
+	return 0;
 }
 
-B3_SHARED_API   void b3GetSoftBodyLink(b3PhysicsClientHandle physClient, int bodyUniqueId, int linkIndex, b3SoftBodyLinkData& info) {
+B3_SHARED_API   int b3GetSoftBodyLink(b3PhysicsClientHandle physClient, int bodyUniqueId, int linkIndex, b3SoftBodyLinkData* info) {
 	PhysicsClient* cl = (PhysicsClient*)physClient;
 	b3Assert(cl);
 	if (cl)
 	{
-		cl->getSoftBodyLink(bodyUniqueId, linkIndex, info);
+		return cl->getSoftBodyLink(bodyUniqueId, linkIndex, *info);
 	}
+	return 0;
 }
 #endif

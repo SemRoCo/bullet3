@@ -961,7 +961,7 @@ struct b3StateSerializationArguments
 struct ApplyNodeForceArgs {
 	int m_bodyUniqueId;
 	int m_nodeIdx;
-	double m_force[MAX_DEGREE_OF_FREEDOM];
+	double m_force[3];
 };
 
 struct SetNodeMassArgs {
