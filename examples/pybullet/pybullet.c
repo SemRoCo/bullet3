@@ -1464,6 +1464,193 @@ static PyObject* pybullet_loadSoftBody(PyObject* self, PyObject* args, PyObject*
 	}
 	return PyLong_FromLong(bodyUniqueId);
 }
+
+static PyObject* pybullet_getNumSoftBodies(PyObject* self, PyObject* args, PyObject* keywds) {
+	b3PhysicsClientHandle sm = 0;
+	PyObject* val=0;
+	int physicsClientId = 0;
+	int bodyUniqueId = -1;
+	static char* kwlist[] = {"physicsClientId", NULL};
+
+	if (!PyArg_ParseTupleAndKeywords(args, keywds, "|i", kwlist, &physicsClientId))
+	{
+		return NULL;
+	}
+	sm = getPhysicsClient(physicsClientId);
+	if (sm == 0)
+	{
+		PyErr_SetString(SpamError, "Not connected to physics server.");
+		return NULL;
+	}
+	
+	return PyInt_FromLong(b3GetNumSoftBodies(sm));
+}
+
+static PyObject* pybullet_getSoftBodyUniqueId(PyObject* self, PyObject* args, PyObject* keywds) {
+	b3PhysicsClientHandle sm = 0;
+	PyObject* val=0;
+	int physicsClientId = 0;
+	int bodyIndex = -1;
+	static char* kwlist[] = {"bodyIndex", "physicsClientId", NULL};
+
+	if (!PyArg_ParseTupleAndKeywords(args, keywds, "i|i", kwlist, &bodyIndex, &physicsClientId))
+	{
+		return NULL;
+	}
+	sm = getPhysicsClient(physicsClientId);
+	if (sm == 0)
+	{
+		PyErr_SetString(SpamError, "Not connected to physics server.");
+		return NULL;
+	}
+	
+	return PyInt_FromLong(b3GetSoftBodyUniqueId(sm, bodyIndex));
+}
+
+static PyObject* pybullet_getSoftBodyConfig(PyObject* self, PyObject* args, PyObject* keywds) {
+	b3PhysicsClientHandle sm = 0;
+	PyObject* val=0;
+	int physicsClientId = 0;
+	int bodyUniqueId = -1;
+	static char* kwlist[] = {"bodyUniqueId", "physicsClientId", NULL};
+
+	if (!PyArg_ParseTupleAndKeywords(args, keywds, "i|i", kwlist, &bodyUniqueId, &physicsClientId))
+	{
+		return NULL;
+	}
+	sm = getPhysicsClient(physicsClientId);
+	if (sm == 0)
+	{
+		PyErr_SetString(SpamError, "Not connected to physics server.");
+		return NULL;
+	}
+	
+	return PyInt_FromLong(b3GetNumSoftBodies(sm));
+}
+
+static PyObject* pybullet_getNumNodes(PyObject* self, PyObject* args, PyObject* keywds) {
+	b3PhysicsClientHandle sm = 0;
+	PyObject* val=0;
+	int physicsClientId = 0;
+	int bodyUniqueId = -1;
+	static char* kwlist[] = {"bodyUniqueId", "physicsClientId", NULL};
+
+	if (!PyArg_ParseTupleAndKeywords(args, keywds, "i|i", kwlist, &bodyUniqueId, &physicsClientId))
+	{
+		return NULL;
+	}
+	sm = getPhysicsClient(physicsClientId);
+	if (sm == 0)
+	{
+		PyErr_SetString(SpamError, "Not connected to physics server.");
+		return NULL;
+	}
+	
+	return PyInt_FromLong(b3GetNumNodes(sm, bodyUniqueId));
+}
+
+static PyObject* pybullet_getNumAnchors(PyObject* self, PyObject* args, PyObject* keywds) {
+	b3PhysicsClientHandle sm = 0;
+	PyObject* val=0;
+	int physicsClientId = 0;
+	int bodyUniqueId = -1;
+	static char* kwlist[] = {"bodyUniqueId", "physicsClientId", NULL};
+
+	if (!PyArg_ParseTupleAndKeywords(args, keywds, "i|i", kwlist, &bodyUniqueId, &physicsClientId))
+	{
+		return NULL;
+	}
+	sm = getPhysicsClient(physicsClientId);
+	if (sm == 0)
+	{
+		PyErr_SetString(SpamError, "Not connected to physics server.");
+		return NULL;
+	}
+	
+	return PyInt_FromLong(b3GetNumAnchors(sm, bodyUniqueId));
+}
+
+static PyObject* pybullet_getNumLinks(PyObject* self, PyObject* args, PyObject* keywds) {
+	b3PhysicsClientHandle sm = 0;
+	PyObject* val=0;
+	int physicsClientId = 0;
+	int bodyUniqueId = -1;
+	static char* kwlist[] = {"bodyUniqueId", "physicsClientId", NULL};
+
+	if (!PyArg_ParseTupleAndKeywords(args, keywds, "i|i", kwlist, &bodyUniqueId, &physicsClientId))
+	{
+		return NULL;
+	}
+	sm = getPhysicsClient(physicsClientId);
+	if (sm == 0)
+	{
+		PyErr_SetString(SpamError, "Not connected to physics server.");
+		return NULL;
+	}
+	
+	return PyInt_FromLong(b3GetNumLinks(sm, bodyUniqueId));
+}
+
+static PyObject* pybullet_getSoftBodyJointInfo(PyObject* self, PyObject* args, PyObject* keywds) {
+	b3PhysicsClientHandle sm = 0;
+	PyObject* val=0;
+	int physicsClientId = 0;
+	int bodyUniqueId = -1;
+	int jointIndex = -1;
+	static char* kwlist[] = {"bodyUniqueId", "jointIndex", "physicsClientId", NULL};
+
+	if (!PyArg_ParseTupleAndKeywords(args, keywds, "ii|i", kwlist, &bodyUniqueId, &physicsClientId))
+	{
+		return NULL;
+	}
+	sm = getPhysicsClient(physicsClientId);
+	if (sm == 0)
+	{
+		PyErr_SetString(SpamError, "Not connected to physics server.");
+		return NULL;
+	}
+
+	b3SoftBodyJointData info;
+	b3GetSoftBodyJointInfo(sm, bodyUniqueId, jointIndex, info);
+	
+	
+	PyObject* pyLinkStateWorldPosition = PyTuple_New(3);
+	for (i = 0; i < 3; ++i)
+	{
+		PyTuple_SetItem(pyLinkStateWorldPosition, i,
+						PyFloat_FromDouble(linkState.m_worldPosition[i]));
+	}
+	
+	return PyInt_FromLong();
+}
+
+static PyObject* pybullet_getAnchor(PyObject* self, PyObject* args, PyObject* keywds) {
+	b3PhysicsClientHandle sm = 0;
+	PyObject* val=0;
+	int physicsClientId = 0;
+	int bodyUniqueId = -1;
+	int anchorIndex = -1;
+	static char* kwlist[] = {"bodyUniqueId", "anchorIndex", "physicsClientId", NULL};
+
+	if (!PyArg_ParseTupleAndKeywords(args, keywds, "ii|i", kwlist, &bodyUniqueId, &physicsClientId))
+	{
+		return NULL;
+	}
+	sm = getPhysicsClient(physicsClientId);
+	if (sm == 0)
+	{
+		PyErr_SetString(SpamError, "Not connected to physics server.");
+		return NULL;
+	}
+	
+	b3GetAnchor(sm, bodyUniqueId, anchorIndex, );
+}
+
+static PyObject* pybullet_getSoftBodyLink(PyObject* self, PyObject* args, PyObject* keywds) {
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
 #endif
 
 // Reset the simulation to remove all loaded objects

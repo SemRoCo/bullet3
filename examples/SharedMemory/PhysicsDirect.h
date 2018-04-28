@@ -79,7 +79,7 @@ public:
 
 	virtual int getSoftBodyUniqueId(int serialIndex) const;
 
-	virtual bool getSoftBodyConfig(int bodyUniqueId, Bullet::SoftBodyConfigData& config);// const;
+	virtual bool getSoftBodyConfig(int bodyUniqueId, struct b3SoftBodyConfigData& config);// const;
 
 	virtual int getNumNodes(int bodyUniqueId) const;
 
@@ -87,11 +87,11 @@ public:
 
 	virtual int getNumLinks(int bodyUniqueId) const;
 
-	virtual bool getSoftBodyJointInfo(int bodyUniqueId, int jointIndex, Bullet::btSoftBodyJointData& info);// const;
+	virtual bool getSoftBodyJointInfo(int bodyUniqueId, int jointIndex, struct b3SoftBodyJointData& info);// const;
 
-	virtual bool getAnchor(int bodyUniqueId, int anchorIndex, Bullet::SoftRigidAnchorData& info);// const;
+	virtual bool getAnchor(int bodyUniqueId, int anchorIndex, struct b3SoftRigidAnchorData& info);// const;
 
-	virtual bool getSoftBodyLink(int bodyUniqueId, int linkIndex, Bullet::SoftBodyLinkData& info);// const;
+	virtual bool getSoftBodyLink(int bodyUniqueId, int linkIndex, struct b3SoftBodyLinkData& info);// const;
 
 	///todo: move this out of the
     virtual void setSharedMemoryKey(int key);

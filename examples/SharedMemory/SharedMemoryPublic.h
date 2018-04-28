@@ -748,4 +748,68 @@ struct b3PhysicsSimulationParameters
 };
 
 
+struct	b3SoftBodyLinkData
+{
+	int						m_nodeIndices[2];			// Node pointers
+	float					m_restLength;			// Rest length		
+	int						m_bbending;		// Bending link
+};
+
+struct	b3SoftRigidAnchorData
+{
+	float		m_c0[9];			// Impulse matrix
+	float		m_c1[3];			// Relative anchor
+	float		m_localFrame[3];		// Anchor position in body space
+	int			m_nodeIndex;			// Node pointer
+	float		m_c2;			// ima*dt
+};
+
+
+
+struct	b3SoftBodyConfigData
+{
+	int					m_aeroModel;		// Aerodynamic model (default: V_Point)
+	float				m_baumgarte;			// Velocities correction factor (Baumgarte)
+	float				m_damping;			// Damping coefficient [0,1]
+	float				m_drag;			// Drag coefficient [0,+inf]
+	float				m_lift;			// Lift coefficient [0,+inf]
+	float				m_pressure;			// Pressure coefficient [-inf,+inf]
+	float				m_volume;			// Volume conversation coefficient [0,+inf]
+	float				m_dynamicFriction;			// Dynamic friction coefficient [0,1]
+	float				m_poseMatch;			// Pose matching coefficient [0,1]		
+	float				m_rigidContactHardness;			// Rigid contacts hardness [0,1]
+	float				m_kineticContactHardness;			// Kinetic contacts hardness [0,1]
+	float				m_softContactHardness;			// Soft contacts hardness [0,1]
+	float				m_anchorHardness;			// Anchors hardness [0,1]
+	float				m_softRigidClusterHardness;		// Soft vs rigid hardness [0,1] (cluster only)
+	float				m_softKineticClusterHardness;		// Soft vs kinetic hardness [0,1] (cluster only)
+	float				m_softSoftClusterHardness;		// Soft vs soft hardness [0,1] (cluster only)
+	float				m_softRigidClusterImpulseSplit;	// Soft vs rigid impulse split [0,1] (cluster only)
+	float				m_softKineticClusterImpulseSplit;	// Soft vs rigid impulse split [0,1] (cluster only)
+	float				m_softSoftClusterImpulseSplit;	// Soft vs rigid impulse split [0,1] (cluster only)
+	float				m_maxVolume;		// Maximum volume ratio for pose
+	float				m_timeScale;		// Time scale
+	int					m_velocityIterations;	// Velocities solver iterations
+	int					m_positionIterations;	// Positions solver iterations
+	int					m_driftIterations;	// Drift solver iterations
+	int					m_clusterIterations;	// Cluster solver iterations
+	int					m_collisionFlags;	// Collisions flags
+};
+
+struct	b3SoftBodyJointData
+{
+	int							m_bodyA;
+	int							m_bodyB;
+	float						m_refs[6];
+	float						m_cfm;
+	float						m_erp;
+	float						m_split;
+	int							m_delete;
+	float						m_relPosition[6];//linear
+	int							m_bodyAtype;
+	int							m_bodyBtype;
+	int							m_jointType;
+	int							m_pad;
+};
+
 #endif//SHARED_MEMORY_PUBLIC_H

@@ -4,14 +4,6 @@
 //#include "SharedMemoryCommands.h"
 #include "LinearMath/btVector3.h"
 
-#ifndef SKIP_SOFT_BODY_MULTI_BODY_DYNAMICS_WORLD
-namespace Bullet {
-	struct SoftBodyConfigData;
-	struct btSoftBodyJointData;
-	struct SoftRigidAnchorData;
-	struct SoftBodyLinkData;
-}
-#endif
 
 class PhysicsClient {
 public:
@@ -89,7 +81,7 @@ public:
 
 	virtual int getSoftBodyUniqueId(int serialIndex) const = 0;
 
-	virtual bool getSoftBodyConfig(int bodyUniqueId, Bullet::SoftBodyConfigData& config) = 0;
+	virtual bool getSoftBodyConfig(int bodyUniqueId, struct b3SoftBodyConfigData& config) = 0;
 
 	virtual int getNumNodes(int bodyUniqueId) const = 0;
 
@@ -97,11 +89,11 @@ public:
 
 	virtual int getNumLinks(int bodyUniqueId) const = 0;
 
-	virtual bool getSoftBodyJointInfo(int bodyUniqueId, int jointIndex, Bullet::btSoftBodyJointData& info) = 0;
+	virtual bool getSoftBodyJointInfo(int bodyUniqueId, int jointIndex, struct b3SoftBodyJointData& info) = 0;
 
-	virtual bool getAnchor(int bodyUniqueId, int anchorIndex, Bullet::SoftRigidAnchorData& info) = 0;
+	virtual bool getAnchor(int bodyUniqueId, int anchorIndex, struct b3SoftRigidAnchorData& info) = 0;
 
-	virtual bool getSoftBodyLink(int bodyUniqueId, int linkIndex, Bullet::SoftBodyLinkData& info) = 0;
+	virtual bool getSoftBodyLink(int bodyUniqueId, int linkIndex, struct b3SoftBodyLinkData& info) = 0;
 #endif
 
 };
