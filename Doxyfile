@@ -403,7 +403,7 @@ HTML_ALIGN_MEMBERS     = YES
 GENERATE_HTMLHELP      = YES
 
 # HHC_LOCATION = "C:\Program Files\HTML Help Workshop\hhc.exe"
-HHC_LOCATION = "C:\Program Files (x86)\HTML Help Workshop\hhc.exe"
+# HHC_LOCATION = "C:\Program Files (x86)\HTML Help Workshop\hhc.exe"
 
 
 HTML_FILE_EXTENSION = .html
@@ -412,7 +412,7 @@ HTML_FOOTER =
 #HTML_STYLESHEET = "\\server\exchange\Software Development\Documentation\DoxyGen\doxygen.css"
 
 CHM_FILE = BulletDocs.chm
-HHC_LOCATION = "c:\program files\HTML Help Workshop\hhc.exe"
+# HHC_LOCATION = "c:\program files\HTML Help Workshop\hhc.exe"
 GENERATE_CHI = YES
 BINARY_TOC = YES
 
