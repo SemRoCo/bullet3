@@ -92,6 +92,7 @@ static void saveCurrentSettingsVR(const btVector3& VRTeleportPos1)
 bool gDebugRenderToggle  = false;
 void	MotionThreadFunc(void* userPtr,void* lsMemory);
 void*	MotionlsMemoryFunc();
+void	MotionlsMemoryReleaseFunc(void* ptr);
 #define MAX_MOTION_NUM_THREADS 1
 enum
 	{
@@ -135,6 +136,7 @@ enum MultiThreadedGUIHelperCommunicationEnums
 	eGUIHelperChangeGraphicsInstanceTextureId,
 	eGUIHelperGetShapeIndexFromInstance,
 	eGUIHelperChangeTexture,
+	eGUIHelperRemoveTexture,
 };
 
 
@@ -149,6 +151,7 @@ b3ThreadSupportInterface* createMotionThreadSupport(int numThreads)
 	b3PosixThreadSupport::ThreadConstructionInfo constructionInfo("MotionThreads",
                                                                 MotionThreadFunc,
                                                                 MotionlsMemoryFunc,
+																MotionlsMemoryReleaseFunc,
                                                                 numThreads);
     b3ThreadSupportInterface* threadSupport = new b3PosixThreadSupport(constructionInfo);
 
@@ -162,7 +165,7 @@ b3ThreadSupportInterface* createMotionThreadSupport(int numThreads)
 
 b3ThreadSupportInterface* createMotionThreadSupport(int numThreads)
 {
-	b3Win32ThreadSupport::Win32ThreadConstructionInfo threadConstructionInfo("MotionThreads",MotionThreadFunc,MotionlsMemoryFunc,numThreads);
+	b3Win32ThreadSupport::Win32ThreadConstructionInfo threadConstructionInfo("MotionThreads",MotionThreadFunc,MotionlsMemoryFunc,MotionlsMemoryReleaseFunc,numThreads);
 	b3Win32ThreadSupport* threadSupport = new b3Win32ThreadSupport(threadConstructionInfo);
 	return threadSupport;
 
@@ -485,6 +488,12 @@ void*	MotionlsMemoryFunc()
 	return new MotionThreadLocalStorage;
 }
 
+void	MotionlsMemoryReleaseFunc(void* ptr)
+{
+	MotionThreadLocalStorage* p = (MotionThreadLocalStorage*) ptr;
+	delete p;
+}
+
 
 
 struct UserDebugDrawLine
@@ -699,7 +708,8 @@ public:
 	int m_primitiveType;
 	int m_textureId;
 	int m_instanceId;
-	
+    bool m_skipGraphicsUpdate;
+    
 	void mainThreadRelease()
 	{
 		BT_PROFILE("mainThreadRelease");
@@ -716,7 +726,14 @@ public:
 
 	void workerThreadWait()
 	{
-		BT_PROFILE("workerThreadWait");
+        BT_PROFILE("workerThreadWait");
+
+        if (m_skipGraphicsUpdate)
+        {
+            getCriticalSection()->setSharedParam(1,eGUIHelperIdle);
+            m_cs->unlock();
+            return;
+        }
 		m_cs2->lock();
 		m_cs->unlock();
 		m_cs2->unlock();
@@ -731,7 +748,7 @@ public:
 		}
 	}
 
-	MultiThreadedOpenGLGuiHelper(CommonGraphicsApp* app, GUIHelperInterface* guiHelper)
+	MultiThreadedOpenGLGuiHelper(CommonGraphicsApp* app, GUIHelperInterface* guiHelper, int skipGraphicsUpdate)
 		:
 	//m_app(app),
 		m_cs(0),
@@ -741,7 +758,10 @@ public:
 		m_debugDraw(0),
 		m_uidGenerator(0),
 		m_texels(0),
-		m_textureId(-1)
+        m_shapeIndex(-1),
+        m_textureId(-1),
+        m_instanceId(-1),
+        m_skipGraphicsUpdate(skipGraphicsUpdate)
 	{
 		m_childGuiHelper = guiHelper;
 
@@ -755,6 +775,12 @@ public:
 			delete m_debugDraw;
 			m_debugDraw = 0;
 		}
+		
+		for (int i=0;i<m_userDebugParams.size();i++)
+		{
+			delete m_userDebugParams[i];
+		}
+		m_userDebugParams.clear();
 	}
 
 	void setCriticalSection(b3CriticalSection* cs)
@@ -859,6 +885,17 @@ public:
 		//m_childGuiHelper->createPhysicsDebugDrawer(rbWorld);
 	}
 
+	int m_removeTextureUid;
+
+	virtual void removeTexture(int textureUid)
+	{
+		m_removeTextureUid = textureUid;
+		m_cs->lock();
+		m_cs->setSharedParam(1, eGUIHelperRemoveTexture);
+
+		workerThreadWait();
+	}
+
 	virtual int	registerTexture(const unsigned char* texels, int width, int height)
 	{
 		m_texels = texels;
@@ -945,6 +982,7 @@ public:
 		m_getShapeIndex_instance = instance;
 		m_cs->lock();
 		m_cs->setSharedParam(1,eGUIHelperGetShapeIndexFromInstance);
+        getShapeIndex_shapeIndex=-1;
 		workerThreadWait();		
 		return getShapeIndex_shapeIndex;
 	}
@@ -1107,6 +1145,16 @@ public:
 		m_cs->setSharedParam(1,eGUIHelperDisplayCameraImageData);
 		workerThreadWait();
 	}
+	
+	virtual void setProjectiveTextureMatrices(const float viewMatrix[16], const float projectionMatrix[16])
+	{
+		m_childGuiHelper->getAppInterface()->m_renderer->setProjectiveTextureMatrices(viewMatrix, projectionMatrix);
+	}
+	
+	virtual void setProjectiveTexture(bool useProjectiveTexture)
+	{
+		m_childGuiHelper->getAppInterface()->m_renderer->setProjectiveTexture(useProjectiveTexture);
+	}
 
 	btDiscreteDynamicsWorld* m_dynamicsWorld;
 
@@ -1169,6 +1217,7 @@ public:
 
 		m_cs->lock();
 		m_cs->setSharedParam(1, eGUIUserDebugAddText);
+        m_resultUserDebugTextUid=-1;
 		workerThreadWait();
 
 		return m_resultUserDebugTextUid;
@@ -1201,6 +1250,7 @@ public:
 
 		m_cs->lock();
 		m_cs->setSharedParam(1, eGUIUserDebugAddParameter);
+        m_userDebugParamUid=-1;
 		workerThreadWait();
 
 		return m_userDebugParamUid;
@@ -1229,6 +1279,7 @@ public:
 		m_tmpLine.m_trackingVisualShapeIndex = trackingVisualShapeIndex;
 		m_cs->lock();
 		m_cs->setSharedParam(1, eGUIUserDebugAddLine);
+        m_resultDebugLineUid=-1;
 		workerThreadWait();
 		return m_resultDebugLineUid;
 	}
@@ -1693,9 +1744,6 @@ void	PhysicsServerExample::initPhysics()
 	m_guiHelper->setUpAxis(upAxis);
 
 
-	
-
-
 	m_threadSupport = createMotionThreadSupport(MAX_MOTION_NUM_THREADS);
 		
 		
@@ -1875,6 +1923,13 @@ void	PhysicsServerExample::updateGraphics()
 		B3_PROFILE("eGUIHelperRegisterTexture");
 		m_multiThreadedHelper->m_textureId = m_multiThreadedHelper->m_childGuiHelper->registerTexture(m_multiThreadedHelper->m_texels,
 						m_multiThreadedHelper->m_textureWidth,m_multiThreadedHelper->m_textureHeight);
+		m_multiThreadedHelper->mainThreadRelease();
+		break;
+	}
+	case eGUIHelperRemoveTexture:
+	{
+		B3_PROFILE("eGUIHelperRemoveTexture");
+		m_multiThreadedHelper->m_childGuiHelper->removeTexture(m_multiThreadedHelper->m_removeTextureUid);
 		m_multiThreadedHelper->mainThreadRelease();
 		break;
 	}
@@ -2205,7 +2260,12 @@ void	PhysicsServerExample::updateGraphics()
 	}
     case eGUIHelperCopyCameraImageData:
         {
-		B3_PROFILE("eGUIHelperCopyCameraImageData");
+			B3_PROFILE("eGUIHelperCopyCameraImageData");
+
+			if (m_multiThreadedHelper->m_startPixelIndex == 0)
+			{
+				m_physicsServer.syncPhysicsToGraphics();
+			}
 
              m_multiThreadedHelper->m_childGuiHelper->copyCameraImageData(m_multiThreadedHelper->m_viewMatrix,
 				 m_multiThreadedHelper->m_projectionMatrix,
@@ -3178,7 +3238,7 @@ extern int gSharedMemoryKey;
 class CommonExampleInterface*    PhysicsServerCreateFuncInternal(struct CommonExampleOptions& options)
 {
 
-	MultiThreadedOpenGLGuiHelper* guiHelperWrapper = new MultiThreadedOpenGLGuiHelper(options.m_guiHelper->getAppInterface(),options.m_guiHelper);
+	MultiThreadedOpenGLGuiHelper* guiHelperWrapper = new MultiThreadedOpenGLGuiHelper(options.m_guiHelper->getAppInterface(),options.m_guiHelper, options.m_skipGraphicsUpdate);
 	
 
   	PhysicsServerExample* example = new PhysicsServerExample(guiHelperWrapper, 

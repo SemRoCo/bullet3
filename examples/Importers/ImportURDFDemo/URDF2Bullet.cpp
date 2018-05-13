@@ -2,6 +2,9 @@
 #include "LinearMath/btTransform.h"
 #include "BulletDynamics/Featherstone/btMultiBodyDynamicsWorld.h"
 #include "BulletCollision/CollisionShapes/btCompoundShape.h"
+#include "BulletCollision/CollisionShapes/btBvhTriangleMeshShape.h"
+
+
 #include "BulletDynamics/Dynamics/btRigidBody.h"
 #include "BulletDynamics/Featherstone/btMultiBodyLinkCollider.h"
 #include "BulletDynamics/Featherstone/btMultiBodyJointLimitConstraint.h"
@@ -212,7 +215,7 @@ void ConvertURDF2BulletInternal(
         //b3Printf("urdf parent index = %d\n",urdfParentIndex);
         //b3Printf("mb parent index = %d\n",mbParentIndex);
         parentRigidBody = cache.getRigidBodyFromLink(urdfParentIndex);
-		u2b.getMassAndInertia(urdfParentIndex, parentMass,parentLocalInertiaDiagonal,parentLocalInertialFrame);
+		u2b.getMassAndInertia2(urdfParentIndex, parentMass,parentLocalInertiaDiagonal,parentLocalInertialFrame, flags);
 
     }
 
@@ -220,7 +223,7 @@ void ConvertURDF2BulletInternal(
     btTransform localInertialFrame;
     localInertialFrame.setIdentity();
     btVector3 localInertiaDiagonal(0,0,0);
-    u2b.getMassAndInertia(urdfLinkIndex, mass,localInertiaDiagonal,localInertialFrame);
+    u2b.getMassAndInertia2(urdfLinkIndex, mass,localInertiaDiagonal,localInertialFrame, flags);
 
 
 
@@ -501,6 +504,15 @@ void ConvertURDF2BulletInternal(
                 compoundShape->setUserIndex(graphicsIndex);
 
                 col->setCollisionShape(compoundShape);
+
+				if (compoundShape->getShapeType() == TRIANGLE_MESH_SHAPE_PROXYTYPE)
+				{
+					btBvhTriangleMeshShape* trimeshShape = (btBvhTriangleMeshShape*)compoundShape;
+					if (trimeshShape->getTriangleInfoMap())
+					{
+						col->setCollisionFlags(col->getCollisionFlags() | btCollisionObject::CF_CUSTOM_MATERIAL_CALLBACK);
+					}
+				}
 
                 btTransform tr;
                 tr.setIdentity();

@@ -2,6 +2,7 @@
 #ifdef BT_USE_CUSTOM_PROFILER
 #endif
 
+
 //========= Copyright Valve Corporation ============//
 
 #include "../OpenGLWindow/SimpleOpenGL3App.h"
@@ -19,11 +20,20 @@
 #include "BulletCollision/CollisionShapes/btCollisionShape.h"
 #include "BulletDynamics/Dynamics/btDiscreteDynamicsWorld.h"
 
+#ifdef __APPLE__
+#define GL_DO_NOT_WARN_IF_MULTI_GL_VERSION_HEADERS_INCLUDED
+#import <Cocoa/Cocoa.h>
+#endif//__APPLE__
+
+
 #include "LinearMath/btIDebugDraw.h"
 int gSharedMemoryKey = -1;
-int  gDebugDrawFlags = 0;
-bool gDisplayDistortion = false;
-bool gDisableDesktopGL = false;
+static int  gDebugDrawFlags = 0;
+static bool gDisplayDistortion = false;
+static bool gDisableDesktopGL = false;
+
+static int maxNumObjectCapacity = 128 * 1024;
+static int maxShapeCapacityInBytes = 128 * 1024 * 1024;
 
 
 #include <stdio.h>
@@ -51,6 +61,9 @@ static vr::VRControllerState_t sPrevStates[vr::k_unMaxTrackedDeviceCount] = { 0 
 #endif
 #ifdef _WIN32
 #include <Windows.h>
+#endif
+#ifdef __linux__
+#define APIENTRY
 #endif
 
 void ThreadSleep( unsigned long nMilliseconds )
@@ -467,7 +480,8 @@ bool CMainApplication::BInit()
 		SDL_GL_SetAttribute( SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG );
 
 	*/
-	m_app = new SimpleOpenGL3App("SimpleOpenGL3App",m_nWindowWidth,m_nWindowHeight,true);
+	
+	m_app = new SimpleOpenGL3App("SimpleOpenGL3App",m_nWindowWidth,m_nWindowHeight,true, maxNumObjectCapacity, maxShapeCapacityInBytes);
 
 	
 	sGuiPtr = new OpenGLGuiHelper(m_app,false);
@@ -525,14 +539,6 @@ bool CMainApplication::BInit()
 	}
 
 
-	glewExperimental = GL_TRUE;
-	GLenum nGlewError = glewInit();
-	if (nGlewError != GLEW_OK)
-	{
-		printf( "%s - Error initializing GLEW! %s\n", __FUNCTION__, glewGetErrorString( nGlewError ) );
-		return false;
-	}
-	glGetError(); // to clear the error caused deep in GLEW
 
 	if ( SDL_GL_SetSwapInterval( m_bVblank ? 1 : 0 ) < 0 )
 	{
@@ -1278,16 +1284,9 @@ bool CMainApplication::SetupTexturemaps()
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
 
-#ifdef WIN32
 	GLfloat fLargest;
-#ifdef B3_USE_GLFW
 	glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY, &fLargest);
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY, fLargest);
-#else
-	glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &fLargest);
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, fLargest);
-#endif
-#endif	
 	glBindTexture( GL_TEXTURE_2D, 0 );
 
 	return ( m_iTexture != 0 );
@@ -1812,13 +1811,11 @@ void CMainApplication::RenderStereoTargets()
 	}
 
 	glBindFramebuffer( GL_FRAMEBUFFER, leftEyeDesc.m_nRenderFramebufferId );
- 	glViewport(0, 0, m_nRenderWidth, m_nRenderHeight );
  	
-	
-	
 
 	m_app->m_window->startRendering();
-	
+        glViewport(0, 0, m_nRenderWidth, m_nRenderHeight );
+
 
 	RenderScene( vr::Eye_Left );
 
@@ -1871,9 +1868,9 @@ void CMainApplication::RenderStereoTargets()
 	}
 	
 	glBindFramebuffer( GL_FRAMEBUFFER, rightEyeDesc.m_nRenderFramebufferId );
- 	glViewport(0, 0, m_nRenderWidth, m_nRenderHeight );
  	
 	m_app->m_window->startRendering();
+        glViewport(0, 0, m_nRenderWidth, m_nRenderHeight );
 	
 	RenderScene( vr::Eye_Right );
 	
@@ -2089,6 +2086,7 @@ void CMainApplication::UpdateHMDMatrixPose()
 					case vr::TrackedDeviceClass_HMD:               m_rDevClassChar[nDevice] = 'H'; break;
 					case vr::TrackedDeviceClass_Invalid:           m_rDevClassChar[nDevice] = 'I'; break;
 					case vr::TrackedDeviceClass_TrackingReference: m_rDevClassChar[nDevice] = 'T'; break;
+                                        case vr::TrackedDeviceClass_GenericTracker:    m_rDevClassChar[nDevice] = 'G'; break;
 					default:                                       m_rDevClassChar[nDevice] = '?'; break;
 					}
 				}
@@ -2299,16 +2297,9 @@ bool CGLRenderModel::BInit( const vr::RenderModel_t & vrModel, const vr::RenderM
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
-#ifdef _WIN32
 	GLfloat fLargest;
-#ifdef B3_USE_GLFW
 	glGetFloatv( GL_MAX_TEXTURE_MAX_ANISOTROPY, &fLargest );
 	glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY, fLargest );
-#else
-	glGetFloatv( GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &fLargest );
-	glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, fLargest );
-#endif //B3_USE_GLFW
-#endif//_WIN32
 	glBindTexture( GL_TEXTURE_2D, 0 );
 
 	m_unVertexCount = vrModel.unTriangleCount * 3;
@@ -2367,7 +2358,10 @@ int main(int argc, char *argv[])
 		b3ChromeUtilsEnableProfiling();
 	}
 
-	
+	args.GetCmdLineArgument("max_num_object_capacity", maxNumObjectCapacity);
+	args.GetCmdLineArgument("max_shape_capacity_in_bytes", maxShapeCapacityInBytes);
+	args.GetCmdLineArgument("shared_memory_key", gSharedMemoryKey);
+
 #ifdef BT_USE_CUSTOM_PROFILER
 	b3SetCustomEnterProfileZoneFunc(dcEnter);
 	b3SetCustomLeaveProfileZoneFunc(dcLeave);

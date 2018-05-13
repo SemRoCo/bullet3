@@ -566,6 +566,23 @@ B3_SHARED_API	int b3PhysicsParameterSetDeterministicOverlappingPairs(b3SharedMem
 	return 0;
 }
 
+B3_SHARED_API	int b3PhysicsParameterSetAllowedCcdPenetration(b3SharedMemoryCommandHandle commandHandle, double allowedCcdPenetration)
+{
+	struct SharedMemoryCommand* command = (struct SharedMemoryCommand*) commandHandle;
+	b3Assert(command->m_type == CMD_SEND_PHYSICS_SIMULATION_PARAMETERS);
+	command->m_physSimParamArgs.m_allowedCcdPenetration = allowedCcdPenetration;
+	command->m_updateFlags |= SIM_PARAM_UPDATE_CCD_ALLOWED_PENETRATION ;
+	return 0;
+}
+
+B3_SHARED_API	int b3PhysicsParameterSetJointFeedbackMode(b3SharedMemoryCommandHandle commandHandle, int jointFeedbackMode)
+{
+	struct SharedMemoryCommand* command = (struct SharedMemoryCommand*) commandHandle;
+	b3Assert(command->m_type == CMD_SEND_PHYSICS_SIMULATION_PARAMETERS);
+	command->m_physSimParamArgs.m_jointFeedbackMode = jointFeedbackMode;
+	command->m_updateFlags |= SIM_PARAM_UPDATE_JOINT_FEEDBACK_MODE;
+	return 0;
+}
 
 B3_SHARED_API int b3PhysicsParamSetNumSolverIterations(b3SharedMemoryCommandHandle commandHandle, int numSolverIterations)
 {
@@ -2203,7 +2220,7 @@ B3_SHARED_API int b3ChangeDynamicsInfoSetMass(b3SharedMemoryCommandHandle comman
 	return 0;
 }
 
-B3_SHARED_API	int b3ChangeDynamicsInfoSetLocalInertiaDiagonal(b3SharedMemoryCommandHandle commandHandle, int bodyUniqueId, int linkIndex, double localInertiaDiagonal[3])
+B3_SHARED_API	int b3ChangeDynamicsInfoSetLocalInertiaDiagonal(b3SharedMemoryCommandHandle commandHandle, int bodyUniqueId, int linkIndex, double localInertiaDiagonal[])
 {
 	struct SharedMemoryCommand* command = (struct SharedMemoryCommand*) commandHandle;
 	b3Assert(command->m_type == CMD_CHANGE_DYNAMICS_INFO);
@@ -2305,6 +2322,17 @@ B3_SHARED_API int b3ChangeDynamicsInfoSetFrictionAnchor(b3SharedMemoryCommandHan
 	command->m_changeDynamicsInfoArgs.m_linkIndex = linkIndex;
 	command->m_changeDynamicsInfoArgs.m_frictionAnchor = frictionAnchor;
 	command->m_updateFlags |= CHANGE_DYNAMICS_INFO_SET_FRICTION_ANCHOR;
+	return 0;
+}
+
+B3_SHARED_API	int b3ChangeDynamicsInfoSetCcdSweptSphereRadius(b3SharedMemoryCommandHandle commandHandle,int bodyUniqueId,int linkIndex, double ccdSweptSphereRadius)
+{
+	struct SharedMemoryCommand* command = (struct SharedMemoryCommand*) commandHandle;
+	b3Assert(command->m_type == CMD_CHANGE_DYNAMICS_INFO);
+	command->m_changeDynamicsInfoArgs.m_bodyUniqueId = bodyUniqueId;
+	command->m_changeDynamicsInfoArgs.m_linkIndex = linkIndex;
+	command->m_changeDynamicsInfoArgs.m_ccdSweptSphereRadius = ccdSweptSphereRadius;
+	command->m_updateFlags |= CHANGE_DYNAMICS_INFO_SET_CCD_SWEPT_SPHERE_RADIUS;
 	return 0;
 }
 
@@ -3060,6 +3088,19 @@ B3_SHARED_API void b3RequestCameraImageSetShadow(b3SharedMemoryCommandHandle com
     b3Assert(command->m_type == CMD_REQUEST_CAMERA_IMAGE_DATA);
     command->m_requestPixelDataArguments.m_hasShadow = hasShadow;
     command->m_updateFlags |= REQUEST_PIXEL_ARGS_SET_SHADOW;
+}
+
+B3_SHARED_API void b3RequestCameraImageSetProjectiveTextureMatrices(b3SharedMemoryCommandHandle commandHandle, float viewMatrix[16], float projectionMatrix[16])
+{
+	struct SharedMemoryCommand* command = (struct SharedMemoryCommand*) commandHandle;
+	b3Assert(command);
+	b3Assert(command->m_type == CMD_REQUEST_CAMERA_IMAGE_DATA);
+	for (int i=0;i<16;i++)
+	{
+		command->m_requestPixelDataArguments.m_projectiveTextureProjectionMatrix[i] = projectionMatrix[i];
+		command->m_requestPixelDataArguments.m_projectiveTextureViewMatrix[i] = viewMatrix[i];
+	}
+	command->m_updateFlags |= REQUEST_PIXEL_ARGS_HAS_PROJECTIVE_TEXTURE_MATRICES;
 }
 
 B3_SHARED_API void b3ComputePositionFromViewMatrix(const float viewMatrix[16], float cameraPosition[3], float cameraTargetPosition[3], float cameraUp[3])

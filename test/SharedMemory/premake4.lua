@@ -164,6 +164,9 @@ project ("Test_PhysicsServerLoopBack")
 			"BussIK",
 			"LinearMath"
 		}
+        if os.is("Linux") then
+            links{"dl"}
+        end
 			
 		files {
 			"test.c",
@@ -208,10 +211,7 @@ project ("Test_PhysicsServerLoopBack")
 			"../../examples/Utils/b3Clock.h",
 			"../../examples/Utils/ChromeTraceUtil.cpp",
 			"../../examples/Utils/ChromeTraceUtil.h",
-			"../../examples/ThirdPartyLibs/tinyxml/tinystr.cpp",
-			"../../examples/ThirdPartyLibs/tinyxml/tinyxml.cpp",
-			"../../examples/ThirdPartyLibs/tinyxml/tinyxmlerror.cpp",
-			"../../examples/ThirdPartyLibs/tinyxml/tinyxmlparser.cpp",
+			"../../examples/ThirdPartyLibs/tinyxml2/tinyxml2.cpp",
 			"../../examples/ThirdPartyLibs/Wavefront/tiny_obj_loader.cpp",
 			"../../examples/ThirdPartyLibs/Wavefront/tiny_obj_loader.h",
 			"../../examples/Importers/ImportColladaDemo/LoadMeshFromCollada.cpp",
@@ -250,6 +250,9 @@ end
 			"BussIK",
 			"LinearMath"
 		}
+        if os.is("Linux") then
+            links{"dl"}
+        end
 			
 		files {
 			"test.c",
@@ -292,10 +295,7 @@ end
 			"../../examples/Utils/b3Clock.cpp",
 			"../../examples/Utils/ChromeTraceUtil.cpp",
 			"../../examples/Utils/ChromeTraceUtil.h",			
-			"../../examples/ThirdPartyLibs/tinyxml/tinystr.cpp",
-			"../../examples/ThirdPartyLibs/tinyxml/tinyxml.cpp",
-			"../../examples/ThirdPartyLibs/tinyxml/tinyxmlerror.cpp",
-			"../../examples/ThirdPartyLibs/tinyxml/tinyxmlparser.cpp",
+			"../../examples/ThirdPartyLibs/tinyxml2/tinyxml2.cpp",
 			"../../examples/ThirdPartyLibs/Wavefront/tiny_obj_loader.cpp",
 			"../../examples/ThirdPartyLibs/Wavefront/tiny_obj_loader.h",
 			"../../examples/Importers/ImportColladaDemo/LoadMeshFromCollada.cpp",
@@ -399,10 +399,7 @@ project ("Test_PhysicsServerInProcessExampleBrowser")
 			"../../examples/Utils/b3ResourcePath.h",
 			"../../examples/Utils/RobotLoggingUtil.cpp",
 			"../../examples/Utils/RobotLoggingUtil.h",
-			"../../examples/ThirdPartyLibs/tinyxml/tinystr.cpp",
-			"../../examples/ThirdPartyLibs/tinyxml/tinyxml.cpp",
-			"../../examples/ThirdPartyLibs/tinyxml/tinyxmlerror.cpp",
-			"../../examples/ThirdPartyLibs/tinyxml/tinyxmlparser.cpp",
+			"../../examples/ThirdPartyLibs/tinyxml2/tinyxml2.cpp",
 			"../../examples/ThirdPartyLibs/Wavefront/tiny_obj_loader.cpp",
 			"../../examples/ThirdPartyLibs/Wavefront/tiny_obj_loader.h",
 			"../../examples/Importers/ImportColladaDemo/LoadMeshFromCollada.cpp",

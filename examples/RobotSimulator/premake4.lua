@@ -43,10 +43,7 @@ myfiles =
 			"../../examples/Utils/b3ResourcePath.h",
 			"../../examples/Utils/RobotLoggingUtil.cpp",
 			"../../examples/Utils/RobotLoggingUtil.h",
-			"../../examples/ThirdPartyLibs/tinyxml/tinystr.cpp",
-			"../../examples/ThirdPartyLibs/tinyxml/tinyxml.cpp",
-			"../../examples/ThirdPartyLibs/tinyxml/tinyxmlerror.cpp",
-			"../../examples/ThirdPartyLibs/tinyxml/tinyxmlparser.cpp",
+			"../../examples/ThirdPartyLibs/tinyxml2/tinyxml2.cpp",
 			"../../examples/ThirdPartyLibs/Wavefront/tiny_obj_loader.cpp",
 			"../../examples/ThirdPartyLibs/Wavefront/tiny_obj_loader.h",
 			"../../examples/Importers/ImportColladaDemo/LoadMeshFromCollada.cpp",
@@ -72,7 +69,7 @@ project ("App_RobotSimulator")
 
 		includedirs {"../../src", "../../examples",
 		"../../examples/ThirdPartyLibs"}
-		defines {"PHYSICS_IN_PROCESS_EXAMPLE_BROWSER"}
+		defines {"B3_USE_ROBOTSIM_GUI", "PHYSICS_IN_PROCESS_EXAMPLE_BROWSER"}
 
 	hasCL = findOpenCL("clew")
 
@@ -193,6 +190,8 @@ if not _OPTIONS["no-enet"] then
 			"RobotSimulatorMain.cpp",
 			"b3RobotSimulatorClientAPI.cpp",
 			"b3RobotSimulatorClientAPI.h",
+			"b3RobotSimulatorClientAPI_NoGUI.cpp",
+			"b3RobotSimulatorClientAPI_NoGUI.h",
 			"MinitaurSetup.cpp",
 			"MinitaurSetup.h",
 			myfiles
@@ -283,6 +282,8 @@ project ("App_VRGloveHandSimulator")
 			"VRGloveSimulatorMain.cpp",
 			"b3RobotSimulatorClientAPI.cpp",
 			"b3RobotSimulatorClientAPI.h",
+			"b3RobotSimulatorClientAPI_NoGUI.cpp",
+			"b3RobotSimulatorClientAPI_NoGUI.h",
 			myfiles
 		}
 

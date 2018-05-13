@@ -630,7 +630,9 @@ enum EnumRenderer
 enum EnumRendererAuxFlags
 {
 	ER_SEGMENTATION_MASK_OBJECT_AND_LINKINDEX=1,
+	ER_USE_PROJECTIVE_TEXTURE=2,
 };
+
 ///flags to pick the IK solver and other options
 enum EnumCalculateInverseKinematicsFlags
 {
@@ -660,6 +662,7 @@ enum b3ConfigureDebugVisualizerEnum
 	COV_ENABLE_RGB_BUFFER_PREVIEW,
 	COV_ENABLE_DEPTH_BUFFER_PREVIEW,
 	COV_ENABLE_SEGMENTATION_MARK_PREVIEW,
+	COV_ENABLE_PLANAR_REFLECTION,
 	
 };
 
@@ -678,6 +681,8 @@ enum eCONNECT_METHOD {
   eCONNECT_TCP = 5,
   eCONNECT_EXISTING_EXAMPLE_BROWSER=6,
   eCONNECT_GUI_SERVER=7,
+  eCONNECT_GUI_MAIN_THREAD=8,
+  eCONNECT_SHARED_MEMORY_SERVER=9,
 };
 
 enum eURDF_Flags
@@ -706,6 +711,7 @@ enum eUrdfGeomTypes //sync with UrdfParser UrdfGeomTypes
 enum eUrdfCollisionFlags
 {
 	GEOM_FORCE_CONCAVE_TRIMESH=1,
+	GEOM_CONCAVE_INTERNAL_EDGE=2,
 };
 
 enum eUrdfVisualFlags
@@ -720,6 +726,12 @@ enum eStateLoggingFlags
 	STATE_LOG_JOINT_MOTOR_TORQUES=1,
 	STATE_LOG_JOINT_USER_TORQUES=2,
 	STATE_LOG_JOINT_TORQUES = STATE_LOG_JOINT_MOTOR_TORQUES+STATE_LOG_JOINT_USER_TORQUES,
+};
+
+enum eJointFeedbackModes
+{
+	JOINT_FEEDBACK_IN_WORLD_SPACE=1,
+	JOINT_FEEDBACK_IN_JOINT_FRAME=2,
 };
 
 #define B3_MAX_PLUGIN_ARG_SIZE 128
@@ -753,6 +765,8 @@ struct b3PhysicsSimulationParameters
 	double m_frictionERP;
 	int m_enableConeFriction;
 	int m_deterministicOverlappingPairs;
+	double m_allowedCcdPenetration;
+	int m_jointFeedbackMode;
 };
 
 

@@ -3,7 +3,11 @@ project "App_BulletExampleBrowser"
         language "C++"
 
         kind "ConsoleApp"
-
+        
+        if os.is("Linux") then
+	        buildoptions{"-fPIC"}
+	    end
+        
         hasCL = findOpenCL("clew")
 
         if (hasCL) then
@@ -122,6 +126,8 @@ project "App_BulletExampleBrowser"
 		"../InverseDynamics/InverseDynamicsExample.h",
 		"../RobotSimulator/b3RobotSimulatorClientAPI.cpp",
 		"../RobotSimulator/b3RobotSimulatorClientAPI.h",		
+		"../RobotSimulator/b3RobotSimulatorClientAPI_NoGUI.cpp",
+		"../RobotSimulator/b3RobotSimulatorClientAPI_NoGUI.h",		
 		"../BasicDemo/BasicExample.*",
 		"../Tutorial/*",
 		"../ExtendedTutorials/*",
@@ -158,14 +164,11 @@ project "App_BulletExampleBrowser"
 		"../RigidBody/RigidBodySoftContact.cpp",
 		"../ThirdPartyLibs/stb_image/*",
 		"../ThirdPartyLibs/Wavefront/tiny_obj_loader.*",
-		"../ThirdPartyLibs/tinyxml/*",
 		"../ThirdPartyLibs/BussIK/*",
 		"../GyroscopicDemo/GyroscopicSetup.cpp",
 		"../GyroscopicDemo/GyroscopicSetup.h",
-        "../ThirdPartyLibs/tinyxml/tinystr.cpp",
-        "../ThirdPartyLibs/tinyxml/tinyxml.cpp",
-        "../ThirdPartyLibs/tinyxml/tinyxmlerror.cpp",
-        "../ThirdPartyLibs/tinyxml/tinyxmlparser.cpp",
+    "../ThirdPartyLibs/tinyxml2/tinyxml2.cpp",
+    "../ThirdPartyLibs/tinyxml2/tinyxml2.h",
         }
 if (hasCL and findOpenGL3()) then
 			files {
@@ -207,6 +210,10 @@ project "BulletExampleBrowserLib"
                 "../../src",
                 "../ThirdPartyLibs",
                 }
+                
+        if os.is("Linux") then
+            buildoptions{"-fPIC"}
+        end
 
 	if _OPTIONS["lua"] then
 		includedirs{"../ThirdPartyLibs/lua-5.2.3/src"}
