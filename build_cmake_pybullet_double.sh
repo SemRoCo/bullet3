@@ -6,7 +6,7 @@ fi
 mkdir -p build_cmake
 cd build_cmake
 cmake -DBUILD_PYBULLET=ON -DBUILD_PYBULLET_NUMPY=OFF -DUSE_DOUBLE_PRECISION=ON -DCMAKE_BUILD_TYPE=Release .. || exit 1
-make -j $(command nproc 2>/dev/null || echo 12) || exit 1
+make -w -j $(command nproc 2>/dev/null || echo 12) || exit 1
 cd examples
 cd pybullet
 if [ -e pybullet.dylib ]; then
