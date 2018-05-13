@@ -15,6 +15,7 @@ Test_*
 AppBasicExampleGui
 
 /docs/html
+/.vscode
 
 *.pyc
 
