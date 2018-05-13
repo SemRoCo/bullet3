@@ -526,7 +526,6 @@ bool findExistingMeshFile(
 			ros_pkg_path.erase(0, pos + 1);
 		}
 
-		b3Printf("I CANT SHAKE THE FEELING THAT THIS IS NOT RELOADING CORRECTLY!");
 		search_paths.push_back(ros_pkg_path);
 	}
 
