@@ -1208,13 +1208,6 @@ B3_SHARED_API	b3SharedMemoryCommandHandle b3CreateVisualShapeCommandInit(b3Physi
 }
 
 
-
-
-
-
-
-
-
 B3_SHARED_API int b3GetStatusVisualShapeUniqueId(b3SharedMemoryStatusHandle statusHandle)
 {
 	const SharedMemoryStatus* status = (const SharedMemoryStatus* ) statusHandle;
@@ -1226,6 +1219,144 @@ B3_SHARED_API int b3GetStatusVisualShapeUniqueId(b3SharedMemoryStatusHandle stat
 	}
 	return -1;
 }
+
+
+B3_SHARED_API int b3GetStatusRigidBodyUniqueId(b3SharedMemoryStatusHandle statusHandle)
+{
+	const SharedMemoryStatus* status = (const SharedMemoryStatus* ) statusHandle;
+	b3Assert(status);
+	b3Assert(status->m_type == CMD_RIGID_BODY_CREATION_COMPLETED);
+	if (status && status->m_type == CMD_RIGID_BODY_CREATION_COMPLETED)
+	{
+		return status->m_rigidBodyCreateArgs.m_bodyUniqueId;
+	}
+	return -1;
+}
+
+
+B3_SHARED_API	b3SharedMemoryCommandHandle b3CreateRigidBodyCommandInit(b3PhysicsClientHandle physClient)
+{
+	PhysicsClient* cl = (PhysicsClient* ) physClient;
+    b3Assert(cl);
+    b3Assert(cl->canSubmitCommand());
+	if (cl)
+	{
+		struct SharedMemoryCommand* command = cl->getAvailableSharedMemoryCommand();
+		b3Assert(command);
+		command->m_type = CMD_CREATE_RIGID_BODY;
+		command->m_updateFlags =0;
+		command->m_createBoxShapeArguments.m_collisionShapeType = COLLISION_SHAPE_TYPE_BOX;
+		return (b3SharedMemoryCommandHandle) command;
+	}
+	return 0;
+}
+
+B3_SHARED_API	int b3SetRigidBodyPosition(b3SharedMemoryCommandHandle commandHandle, double position[/*3*/]) {
+	struct SharedMemoryCommand* command = (struct SharedMemoryCommand*) commandHandle;
+    b3Assert(command);
+    b3Assert(command->m_type == CMD_CREATE_RIGID_BODY);
+    command->m_updateFlags |= BOX_SHAPE_HAS_INITIAL_POSITION;
+
+	command->m_createBoxShapeArguments.m_initialPosition[0] = position[0];
+	command->m_createBoxShapeArguments.m_initialPosition[1] = position[1];
+	command->m_createBoxShapeArguments.m_initialPosition[2] = position[2];	
+	return 0;
+}
+
+B3_SHARED_API	int b3SetRigidBodyOrientation(b3SharedMemoryCommandHandle commandHandle, double orientation[/*4*/]) {
+	struct SharedMemoryCommand* command = (struct SharedMemoryCommand*) commandHandle;
+    b3Assert(command);
+    b3Assert(command->m_type == CMD_CREATE_RIGID_BODY);
+    command->m_updateFlags |= BOX_SHAPE_HAS_INITIAL_ORIENTATION;
+
+	command->m_createBoxShapeArguments.m_initialOrientation[0] = orientation[0];
+	command->m_createBoxShapeArguments.m_initialOrientation[1] = orientation[1];
+	command->m_createBoxShapeArguments.m_initialOrientation[2] = orientation[2];
+	command->m_createBoxShapeArguments.m_initialOrientation[3] = orientation[3];
+
+	return 0;
+}
+
+B3_SHARED_API	int b3SetRigidBodyMass(b3SharedMemoryCommandHandle commandHandle, double mass) {
+	struct SharedMemoryCommand* command = (struct SharedMemoryCommand*) commandHandle;
+    b3Assert(command);
+    b3Assert(command->m_type == CMD_CREATE_RIGID_BODY);
+    command->m_updateFlags |= BOX_SHAPE_HAS_MASS;
+
+	command->m_createBoxShapeArguments.m_mass = mass;
+
+	return 0;
+}
+
+B3_SHARED_API	int b3SetRigidBodyColor(b3SharedMemoryCommandHandle commandHandle, double rgba[/*4*/]) {
+	struct SharedMemoryCommand* command = (struct SharedMemoryCommand*) commandHandle;
+    b3Assert(command);
+    b3Assert(command->m_type == CMD_CREATE_RIGID_BODY);
+    command->m_updateFlags |= BOX_SHAPE_HAS_COLOR;
+
+	command->m_createBoxShapeArguments.m_colorRGBA[0] = rgba[0];
+	command->m_createBoxShapeArguments.m_colorRGBA[1] = rgba[1];
+	command->m_createBoxShapeArguments.m_colorRGBA[2] = rgba[2];
+	command->m_createBoxShapeArguments.m_colorRGBA[3] = rgba[3];
+
+	return 0;
+}
+
+B3_SHARED_API	int b3SetRigidBodyShapeSphere(b3SharedMemoryCommandHandle commandHandle,double radius) {
+	struct SharedMemoryCommand* command = (struct SharedMemoryCommand*) commandHandle;
+    b3Assert(command);
+    b3Assert(command->m_type == CMD_CREATE_RIGID_BODY);
+    command->m_updateFlags |= BOX_SHAPE_HAS_COLLISION_SHAPE_TYPE | BOX_SHAPE_HAS_HALF_EXTENTS;
+    
+	command->m_createBoxShapeArguments.m_collisionShapeType = COLLISION_SHAPE_TYPE_SPHERE;
+    command->m_createBoxShapeArguments.m_halfExtentsX = radius;
+    command->m_createBoxShapeArguments.m_halfExtentsY = 0;
+    command->m_createBoxShapeArguments.m_halfExtentsZ = 0;
+	return 0;
+}
+
+B3_SHARED_API	int b3SetRigidBodyShapeBox(b3SharedMemoryCommandHandle commandHandle,double halfExtents[/*3*/]) {
+	struct SharedMemoryCommand* command = (struct SharedMemoryCommand*) commandHandle;
+    b3Assert(command);
+    b3Assert(command->m_type == CMD_CREATE_RIGID_BODY);
+    command->m_updateFlags |= BOX_SHAPE_HAS_COLLISION_SHAPE_TYPE | BOX_SHAPE_HAS_HALF_EXTENTS;
+    
+	command->m_createBoxShapeArguments.m_collisionShapeType = COLLISION_SHAPE_TYPE_BOX;
+    command->m_createBoxShapeArguments.m_halfExtentsX = halfExtents[0];
+    command->m_createBoxShapeArguments.m_halfExtentsY = halfExtents[1];
+    command->m_createBoxShapeArguments.m_halfExtentsZ = halfExtents[2];
+
+	return 0;
+}
+
+B3_SHARED_API	int b3SetRigidBodyShapeCapsule(b3SharedMemoryCommandHandle commandHandle,double radius, double height) {
+	struct SharedMemoryCommand* command = (struct SharedMemoryCommand*) commandHandle;
+    b3Assert(command);
+    b3Assert(command->m_type == CMD_CREATE_RIGID_BODY);
+    command->m_updateFlags |= BOX_SHAPE_HAS_COLLISION_SHAPE_TYPE | BOX_SHAPE_HAS_HALF_EXTENTS;
+    
+	command->m_createBoxShapeArguments.m_collisionShapeType = COLLISION_SHAPE_TYPE_CAPSULE_Z;
+    command->m_createBoxShapeArguments.m_halfExtentsX = 0;
+    command->m_createBoxShapeArguments.m_halfExtentsY = radius;
+    command->m_createBoxShapeArguments.m_halfExtentsZ = height;
+	
+	return 0;
+}
+
+B3_SHARED_API	int b3SetRigidBodyShapeCylinder(b3SharedMemoryCommandHandle commandHandle,double radius, double height) {
+	struct SharedMemoryCommand* command = (struct SharedMemoryCommand*) commandHandle;
+    b3Assert(command);
+    b3Assert(command->m_type == CMD_CREATE_RIGID_BODY);
+    command->m_updateFlags |= BOX_SHAPE_HAS_COLLISION_SHAPE_TYPE | BOX_SHAPE_HAS_HALF_EXTENTS;
+    
+	command->m_createBoxShapeArguments.m_collisionShapeType = COLLISION_SHAPE_TYPE_CYLINDER_Z;
+    command->m_createBoxShapeArguments.m_halfExtentsX = 0;
+    command->m_createBoxShapeArguments.m_halfExtentsY = radius;
+    command->m_createBoxShapeArguments.m_halfExtentsZ = height;
+	
+	return 0;
+}
+
 
 B3_SHARED_API	b3SharedMemoryCommandHandle b3CreateMultiBodyCommandInit(b3PhysicsClientHandle physClient)
 {

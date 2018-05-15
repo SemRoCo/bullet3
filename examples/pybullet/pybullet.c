@@ -6875,6 +6875,91 @@ static PyObject* pybullet_createVisualShapeArray(PyObject* self, PyObject* args,
 	PyErr_SetString(SpamError, "createVisualShapeArray failed.");
 	return NULL;
 }
+
+static PyObject* pybullet_createRigidBody(PyObject* self, PyObject* args, PyObject* keywds)
+{
+	int physicsClientId = 0;
+	b3PhysicsClientHandle sm = 0;
+	int shapeType=-1;
+	double radius=0.5;
+	double height = 1;
+	double mass = 1;
+	PyObject* positionObj=0;
+	double position[3]={0,0,0};
+	PyObject* orientationObj=0;
+	double orientation[4]={0,0,0,1};
+	
+	PyObject* colorObj=0;
+
+	PyObject* halfExtentsObj=0;
+
+	static char* kwlist[] = {"shapeType", "radius", "halfExtents", "height", "position", "orientation", "color", "physicsClientId", NULL};
+	if (!PyArg_ParseTupleAndKeywords(args, keywds, "i|dOdOOOi", kwlist,	&shapeType, &radius, &halfExtentsObj, &height, &positionObj, &orientationObj, &colorObj, &physicsClientId)) {
+		return NULL;
+	}
+	
+	sm = getPhysicsClient(physicsClientId);
+	if (sm == 0) {
+		PyErr_SetString(SpamError, "Not connected to physics server.");
+		return NULL;
+	}
+
+	if (shapeType>=GEOM_SPHERE) {
+		b3SharedMemoryStatusHandle statusHandle;
+		int statusType;
+		int shapeIndex = -1;
+
+		b3SharedMemoryCommandHandle commandHandle = b3CreateRigidBodyCommandInit(sm);
+		if (shapeType==GEOM_SPHERE && radius>0) {
+			shapeIndex = b3SetRigidBodyShapeSphere(commandHandle,radius);
+		}
+
+		if (shapeType==GEOM_BOX && halfExtentsObj) {
+			double halfExtents[3] = {1,1,1};
+			pybullet_internalSetVectord(halfExtentsObj,halfExtents);
+			shapeIndex = b3SetRigidBodyShapeBox(commandHandle, halfExtents);
+		}
+
+		if (shapeType==GEOM_CAPSULE && radius>0 && height>=0) {
+			shapeIndex = b3SetRigidBodyShapeCapsule(commandHandle, radius, height * 0.5);
+		}
+
+		if (shapeType==GEOM_CYLINDER && radius>0 && height>=0) {
+			shapeIndex = b3SetRigidBodyShapeCylinder(commandHandle, radius, height * 0.5);
+		}
+
+		if (shapeIndex>=0) {
+			if (positionObj) {
+				pybullet_internalSetVectord(positionObj, position);
+				b3SetRigidBodyPosition(commandHandle, position);
+			}
+
+			if (orientationObj) {
+				pybullet_internalSetVector4d(orientationObj, orientation);
+				b3SetRigidBodyOrientation(commandHandle, orientation);
+			}
+
+			b3SetRigidBodyMass(commandHandle, mass);
+
+			if (colorObj) {
+				double color[] = {1,1,1,1};
+				pybullet_internalSetVector4d(colorObj, color);
+				b3SetRigidBodyColor(commandHandle, color);
+			}
+		}
+		statusHandle = b3SubmitClientCommandAndWaitStatus(sm, commandHandle);
+		statusType = b3GetStatusType(statusHandle);
+		if (statusType == CMD_RIGID_BODY_CREATION_COMPLETED)
+		{
+			int uid = b3GetStatusRigidBodyUniqueId(statusHandle);
+			PyObject* ob = PyLong_FromLong(uid);
+			return ob;
+		}
+	}
+	PyErr_SetString(SpamError, "createCollisionShape failed.");
+	return NULL;
+}
+
 static PyObject* pybullet_createMultiBody(PyObject* self, PyObject* args, PyObject* keywds)
 {
 	int physicsClientId = 0;
@@ -9205,6 +9290,8 @@ static PyMethodDef SpamMethods[] = {
 	{"createMultiBody", (PyCFunction)pybullet_createMultiBody, METH_VARARGS | METH_KEYWORDS,
 	 "Create a multi body. Returns a non-negative (int) unique id, if successfull, negative otherwise."},
 
+	{"createRigidBody", (PyCFunction)pybullet_createRigidBody, METH_VARARGS | METH_KEYWORDS,
+	 "Create a rigid body. Returns a non-negative (int) unique id, if successfull, negative otherwise."},
 
 	{"createConstraint", (PyCFunction)pybullet_createUserConstraint, METH_VARARGS | METH_KEYWORDS,
 	 "Create a constraint between two bodies. Returns a (int) unique id, if successfull."},

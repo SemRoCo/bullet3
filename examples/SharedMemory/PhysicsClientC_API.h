@@ -433,6 +433,19 @@ B3_SHARED_API	void b3CreateVisualShapeSetRGBAColor(b3SharedMemoryCommandHandle c
 
 B3_SHARED_API	int b3GetStatusVisualShapeUniqueId(b3SharedMemoryStatusHandle statusHandle);
 
+B3_SHARED_API	b3SharedMemoryCommandHandle b3CreateRigidBodyCommandInit(b3PhysicsClientHandle physClient);
+B3_SHARED_API	int b3SetRigidBodyPosition(b3SharedMemoryCommandHandle commandHandle, double position[/*3*/]);
+B3_SHARED_API	int b3SetRigidBodyOrientation(b3SharedMemoryCommandHandle commandHandle, double orientation[/*4*/]);
+B3_SHARED_API	int b3SetRigidBodyMass(b3SharedMemoryCommandHandle commandHandle, double mass);
+B3_SHARED_API	int b3SetRigidBodyColor(b3SharedMemoryCommandHandle commandHandle, double rgba[/*4*/]);
+
+B3_SHARED_API	int b3SetRigidBodyShapeSphere(b3SharedMemoryCommandHandle commandHandle,double radius);
+B3_SHARED_API	int b3SetRigidBodyShapeBox(b3SharedMemoryCommandHandle commandHandle,double halfExtents[/*3*/]);
+B3_SHARED_API	int b3SetRigidBodyShapeCapsule(b3SharedMemoryCommandHandle commandHandle,double radius, double height);
+B3_SHARED_API	int b3SetRigidBodyShapeCylinder(b3SharedMemoryCommandHandle commandHandle,double radius, double height);
+
+B3_SHARED_API int b3GetStatusRigidBodyUniqueId(b3SharedMemoryStatusHandle statusHandle);
+
 B3_SHARED_API	b3SharedMemoryCommandHandle b3CreateMultiBodyCommandInit(b3PhysicsClientHandle physClient);
 B3_SHARED_API	int b3CreateMultiBodyBase(b3SharedMemoryCommandHandle commandHandle, double mass, int collisionShapeUnique, int visualShapeUniqueId, double basePosition[/*3*/], double baseOrientation[/*4*/] , double baseInertialFramePosition[/*3*/], double baseInertialFrameOrientation[/*4*/]);
 
