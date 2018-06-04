@@ -185,7 +185,7 @@ void ConvertURDF2BulletInternal(
     URDF2BulletCachedData& cache, int urdfLinkIndex,
     const btTransform& parentTransformInWorldSpace, btMultiBodyDynamicsWorld* world1,
     bool createMultiBody, const char* pathPrefix,
-    int flags = 0)
+    int flags = 0, UrdfVisualShapeCache* cachedLinkGraphicsShapesIn=0, UrdfVisualShapeCache* cachedLinkGraphicsShapesOut=0)
 {
 	B3_PROFILE("ConvertURDF2BulletInternal2");
     //b3Printf("start converting/extracting data from URDF interface\n");
@@ -273,7 +273,23 @@ void ConvertURDF2BulletInternal(
 	int graphicsIndex;
 	{
 		B3_PROFILE("convertLinkVisualShapes");
-		graphicsIndex = u2b.convertLinkVisualShapes(urdfLinkIndex, pathPrefix, localInertialFrame);
+		if (cachedLinkGraphicsShapesIn && cachedLinkGraphicsShapesIn->m_cachedUrdfLinkVisualShapeIndices.size() > (mbLinkIndex+1))
+		{
+			graphicsIndex = cachedLinkGraphicsShapesIn->m_cachedUrdfLinkVisualShapeIndices[mbLinkIndex+1];
+			UrdfMaterialColor matColor = cachedLinkGraphicsShapesIn->m_cachedUrdfLinkColors[mbLinkIndex + 1];
+			u2b.setLinkColor2(urdfLinkIndex, matColor);
+		}
+		else
+		{
+			graphicsIndex = u2b.convertLinkVisualShapes(urdfLinkIndex, pathPrefix, localInertialFrame);
+			if (cachedLinkGraphicsShapesOut)
+			{
+				cachedLinkGraphicsShapesOut->m_cachedUrdfLinkVisualShapeIndices.push_back(graphicsIndex);
+				UrdfMaterialColor matColor;
+				u2b.getLinkColor2(urdfLinkIndex, matColor);
+				cachedLinkGraphicsShapesOut->m_cachedUrdfLinkColors.push_back(matColor);
+			}
+		}
 	}
 	
 
@@ -321,6 +337,12 @@ void ConvertURDF2BulletInternal(
         if (!createMultiBody)
         {
             btRigidBody* body = creation.allocateRigidBody(urdfLinkIndex, mass, localInertiaDiagonal, inertialFrameInWorldSpace, compoundShape);
+			bool canSleep = (flags & CUF_ENABLE_SLEEPING)!=0;
+			if (!canSleep)
+			{
+				body->forceActivationState(DISABLE_DEACTIVATION);
+			}
+
             linkRigidBody = body;
 
             world1->addRigidBody(body);
@@ -343,7 +365,7 @@ void ConvertURDF2BulletInternal(
             if (cache.m_bulletMultiBody==0)
             {
                 
-                bool canSleep = false;
+                bool canSleep = (flags & CUF_ENABLE_SLEEPING)!=0;
                 bool isFixedBase = (mass==0);//todo: figure out when base is fixed
                 int totalNumJoints = cache.m_totalNumJoints1;
                 cache.m_bulletMultiBody = creation.allocateMultiBody(urdfLinkIndex, totalNumJoints,mass, localInertiaDiagonal, isFixedBase, canSleep);
@@ -573,6 +595,11 @@ void ConvertURDF2BulletInternal(
 					}
                 } else
                 {
+					//todo: fix the crash it can cause
+					//if (cache.m_bulletMultiBody->getBaseMass()==0)
+					//{
+					//	col->setCollisionFlags(btCollisionObject::CF_KINEMATIC_OBJECT);//:CF_STATIC_OBJECT);
+					//}
                     cache.m_bulletMultiBody->setBaseCollider(col);
                 }
             }
@@ -594,7 +621,7 @@ void ConvertURDF2BulletInternal(
     {
         int urdfChildLinkIndex = urdfChildIndices[i];
 
-        ConvertURDF2BulletInternal(u2b,creation, cache,urdfChildLinkIndex,linkTransformInWorldSpace,world1,createMultiBody,pathPrefix,flags);
+        ConvertURDF2BulletInternal(u2b,creation, cache,urdfChildLinkIndex,linkTransformInWorldSpace,world1,createMultiBody,pathPrefix,flags, cachedLinkGraphicsShapesIn, cachedLinkGraphicsShapesOut);
     }
 
 }
@@ -602,14 +629,21 @@ void ConvertURDF2Bullet(
     const URDFImporterInterface& u2b, MultiBodyCreationInterface& creation,
     const btTransform& rootTransformInWorldSpace,
     btMultiBodyDynamicsWorld* world1,
-    bool createMultiBody, const char* pathPrefix, int flags)
+    bool createMultiBody, const char* pathPrefix, int flags, UrdfVisualShapeCache* cachedLinkGraphicsShapes)
 {
-    URDF2BulletCachedData cache;
 
+	URDF2BulletCachedData cache;
     InitURDF2BulletCache(u2b,cache);
     int urdfLinkIndex = u2b.getRootLinkIndex();
 	B3_PROFILE("ConvertURDF2Bullet");
-	ConvertURDF2BulletInternal(u2b, creation, cache, urdfLinkIndex,rootTransformInWorldSpace,world1,createMultiBody,pathPrefix,flags);
+	
+	UrdfVisualShapeCache cachedLinkGraphicsShapesOut;
+
+	ConvertURDF2BulletInternal(u2b, creation, cache, urdfLinkIndex,rootTransformInWorldSpace,world1,createMultiBody,pathPrefix,flags, cachedLinkGraphicsShapes, &cachedLinkGraphicsShapesOut);
+	if (cachedLinkGraphicsShapes && cachedLinkGraphicsShapesOut.m_cachedUrdfLinkVisualShapeIndices.size() > cachedLinkGraphicsShapes->m_cachedUrdfLinkVisualShapeIndices.size())
+	{
+		*cachedLinkGraphicsShapes = cachedLinkGraphicsShapesOut;
+	}
 
 	if (world1 && cache.m_bulletMultiBody)
 	{

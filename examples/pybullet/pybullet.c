@@ -919,13 +919,15 @@ static PyObject* pybullet_changeDynamicsInfo(PyObject* self, PyObject* args, PyO
 	double contactDamping = -1;
 	double ccdSweptSphereRadius=-1;
 	int frictionAnchor = -1;
+	double contactProcessingThreshold = -1;
+
 	PyObject* localInertiaDiagonalObj=0;
 
 	b3PhysicsClientHandle sm = 0;
 
 	int physicsClientId = 0;
-	static char* kwlist[] = {"bodyUniqueId", "linkIndex", "mass", "lateralFriction", "spinningFriction", "rollingFriction","restitution", "linearDamping", "angularDamping", "contactStiffness", "contactDamping", "frictionAnchor", "localInertiaDiagonal", "ccdSweptSphereRadius", "physicsClientId", NULL};
-	if (!PyArg_ParseTupleAndKeywords(args, keywds, "ii|dddddddddiOdi", kwlist, &bodyUniqueId, &linkIndex,&mass, &lateralFriction, &spinningFriction, &rollingFriction, &restitution,&linearDamping, &angularDamping, &contactStiffness, &contactDamping, &frictionAnchor, &localInertiaDiagonalObj, &ccdSweptSphereRadius, &physicsClientId))
+	static char* kwlist[] = {"bodyUniqueId", "linkIndex", "mass", "lateralFriction", "spinningFriction", "rollingFriction","restitution", "linearDamping", "angularDamping", "contactStiffness", "contactDamping", "frictionAnchor", "localInertiaDiagonal", "ccdSweptSphereRadius", "contactProcessingThreshold",  "physicsClientId", NULL};
+	if (!PyArg_ParseTupleAndKeywords(args, keywds, "ii|dddddddddiOddi", kwlist, &bodyUniqueId, &linkIndex,&mass, &lateralFriction, &spinningFriction, &rollingFriction, &restitution,&linearDamping, &angularDamping, &contactStiffness, &contactDamping, &frictionAnchor, &localInertiaDiagonalObj, &ccdSweptSphereRadius, &contactProcessingThreshold, &physicsClientId))
 	{
 		return NULL;
 	}
@@ -936,6 +938,15 @@ static PyObject* pybullet_changeDynamicsInfo(PyObject* self, PyObject* args, PyO
 		PyErr_SetString(SpamError, "Not connected to physics server.");
 		return NULL;
 	}
+<<<<<<< HEAD
+=======
+	
+	if ((contactStiffness>=0 && contactDamping <0)||(contactStiffness<0 && contactDamping >=0))
+	{
+		PyErr_SetString(SpamError, "Both contactStiffness and contactDamping needs to be set together.");
+		return NULL;
+	}
+>>>>>>> c77586a526837c1b50517a313711857bffbeb37a
 
 	{
 		b3SharedMemoryCommandHandle command = b3InitChangeDynamicsInfo(sm);
@@ -988,6 +999,10 @@ static PyObject* pybullet_changeDynamicsInfo(PyObject* self, PyObject* args, PyO
 		if (ccdSweptSphereRadius>=0)
 		{
 			b3ChangeDynamicsInfoSetCcdSweptSphereRadius(command,bodyUniqueId,linkIndex, ccdSweptSphereRadius);
+		}
+		if (contactProcessingThreshold >= 0)
+		{
+			b3ChangeDynamicsInfoSetContactProcessingThreshold(command, bodyUniqueId, linkIndex, contactProcessingThreshold);
 		}
 		statusHandle = b3SubmitClientCommandAndWaitStatus(sm, command);
 	}
@@ -1157,12 +1172,14 @@ static PyObject* pybullet_setPhysicsEngineParameter(PyObject* self, PyObject* ar
 	b3PhysicsClientHandle sm = 0;
 	int deterministicOverlappingPairs = -1;
 	int jointFeedbackMode =-1;
+	double solverResidualThreshold = -1;
+	double contactSlop = -1;
 	
 	int physicsClientId = 0;
-	static char* kwlist[] = {"fixedTimeStep", "numSolverIterations", "useSplitImpulse", "splitImpulsePenetrationThreshold", "numSubSteps", "collisionFilterMode", "contactBreakingThreshold", "maxNumCmdPer1ms", "enableFileCaching","restitutionVelocityThreshold", "erp", "contactERP", "frictionERP", "enableConeFriction", "deterministicOverlappingPairs", "allowedCcdPenetration", "jointFeedbackMode", "physicsClientId", NULL};
+	static char* kwlist[] = {"fixedTimeStep", "numSolverIterations", "useSplitImpulse", "splitImpulsePenetrationThreshold", "numSubSteps", "collisionFilterMode", "contactBreakingThreshold", "maxNumCmdPer1ms", "enableFileCaching","restitutionVelocityThreshold", "erp", "contactERP", "frictionERP", "enableConeFriction", "deterministicOverlappingPairs", "allowedCcdPenetration", "jointFeedbackMode", "solverResidualThreshold", "contactSlop", "physicsClientId", NULL};
 
-	if (!PyArg_ParseTupleAndKeywords(args, keywds, "|diidiidiiddddiidii", kwlist, &fixedTimeStep, &numSolverIterations, &useSplitImpulse, &splitImpulsePenetrationThreshold, &numSubSteps,
-									 &collisionFilterMode, &contactBreakingThreshold, &maxNumCmdPer1ms, &enableFileCaching, &restitutionVelocityThreshold, &erp, &contactERP, &frictionERP, &enableConeFriction, &deterministicOverlappingPairs, &allowedCcdPenetration, &jointFeedbackMode, &physicsClientId))
+	if (!PyArg_ParseTupleAndKeywords(args, keywds, "|diidiidiiddddiididdi", kwlist, &fixedTimeStep, &numSolverIterations, &useSplitImpulse, &splitImpulsePenetrationThreshold, &numSubSteps,
+									 &collisionFilterMode, &contactBreakingThreshold, &maxNumCmdPer1ms, &enableFileCaching, &restitutionVelocityThreshold, &erp, &contactERP, &frictionERP, &enableConeFriction, &deterministicOverlappingPairs, &allowedCcdPenetration, &jointFeedbackMode, &solverResidualThreshold, &contactSlop, &physicsClientId))
 	{
 		return NULL;
 	}
@@ -1181,6 +1198,11 @@ static PyObject* pybullet_setPhysicsEngineParameter(PyObject* self, PyObject* ar
 		if (numSolverIterations >= 0)
 		{
 			b3PhysicsParamSetNumSolverIterations(command, numSolverIterations);
+		}
+
+		if (solverResidualThreshold)
+		{
+			b3PhysicsParamSetSolverResidualThreshold(command, solverResidualThreshold);
 		}
 
 		if (collisionFilterMode >= 0)
@@ -1207,6 +1229,12 @@ static PyObject* pybullet_setPhysicsEngineParameter(PyObject* self, PyObject* ar
 		{
 			b3PhysicsParamSetContactBreakingThreshold(command, contactBreakingThreshold);
 		}
+		if (contactSlop >= 0)
+		{
+			b3PhysicsParamSetContactSlop(command, contactSlop);
+		}
+
+
 		//-1 is disables the maxNumCmdPer1ms feature, allow it
 		if (maxNumCmdPer1ms >= -1)
 		{
@@ -7334,6 +7362,29 @@ static PyObject* pybullet_getContactPointData(PyObject* self, PyObject* args, Py
 	return Py_None;
 }
 
+
+static PyObject* pybullet_isNumpyEnabled(PyObject* self, PyObject* args, PyObject* keywds)
+{
+	int physicsClientId = 0;
+	int isNumpyEnabled = 0;
+	int method = 0;
+	PyObject* pylist = 0;
+	PyObject* val = 0;
+	b3PhysicsClientHandle sm = 0;
+	static char* kwlist[] = { "physicsClientId", NULL };
+	if (!PyArg_ParseTupleAndKeywords(args, keywds, "|i", kwlist, &physicsClientId))
+	{
+		return NULL;
+	}
+
+#ifdef PYBULLET_USE_NUMPY
+	isNumpyEnabled = 1;
+#endif
+	return PyLong_FromLong(isNumpyEnabled);
+}
+
+
+
 /// Render an image from the current timestep of the simulation, width, height are required, other args are optional
 // getCameraImage(w, h, view[16], projection[16], lightDir[3], lightColor[3], lightDist, hasShadow, lightAmbientCoeff, lightDiffuseCoeff, lightSpecularCoeff, renderer)
 static PyObject* pybullet_getCameraImage(PyObject* self, PyObject* args, PyObject* keywds)
@@ -8515,9 +8566,6 @@ static PyObject* pybullet_executePluginCommand(PyObject* self,
 	return PyInt_FromLong(statusType);
 }
 
-
-
-
 ///Inverse Kinematics binding
 static PyObject* pybullet_calculateInverseKinematics(PyObject* self,
 													 PyObject* args, PyObject* keywds)
@@ -8537,9 +8585,12 @@ static PyObject* pybullet_calculateInverseKinematics(PyObject* self,
 	PyObject* jointRangesObj = 0;
 	PyObject* restPosesObj = 0;
 	PyObject* jointDampingObj = 0;
+	PyObject* currentPositionsObj = 0;
+	int maxNumIterations = -1;
+	double residualThreshold=-1;
 
-	static char* kwlist[] = {"bodyUniqueId", "endEffectorLinkIndex", "targetPosition", "targetOrientation", "lowerLimits", "upperLimits", "jointRanges", "restPoses", "jointDamping", "solver", "physicsClientId",  NULL};
-	if (!PyArg_ParseTupleAndKeywords(args, keywds, "iiO|OOOOOOii", kwlist, &bodyUniqueId, &endEffectorLinkIndex, &targetPosObj, &targetOrnObj, &lowerLimitsObj, &upperLimitsObj, &jointRangesObj, &restPosesObj, &jointDampingObj, &solver, &physicsClientId))
+	static char* kwlist[] = {"bodyUniqueId", "endEffectorLinkIndex", "targetPosition", "targetOrientation", "lowerLimits", "upperLimits", "jointRanges", "restPoses", "jointDamping", "solver", "currentPositions", "maxNumIterations", "residualThreshold", "physicsClientId",  NULL};
+	if (!PyArg_ParseTupleAndKeywords(args, keywds, "iiO|OOOOOOiOidi", kwlist, &bodyUniqueId, &endEffectorLinkIndex, &targetPosObj, &targetOrnObj, &lowerLimitsObj, &upperLimitsObj, &jointRangesObj, &restPosesObj, &jointDampingObj, &solver, &currentPositionsObj, &maxNumIterations, &residualThreshold, &physicsClientId))
 	{
 		//backward compatibility bodyIndex -> bodyUniqueId. don't update keywords, people need to migrate to bodyUniqueId version
 		static char* kwlist2[] = {"bodyIndex", "endEffectorLinkIndex", "targetPosition", "targetOrientation", "lowerLimits", "upperLimits", "jointRanges", "restPoses", "jointDamping", "physicsClientId",  NULL};
@@ -8567,57 +8618,75 @@ static PyObject* pybullet_calculateInverseKinematics(PyObject* self,
 		int szRestPoses = restPosesObj ? PySequence_Size(restPosesObj) : 0;
 		int szJointDamping = jointDampingObj ? PySequence_Size(jointDampingObj) : 0;
 
+		int szCurrentPositions = currentPositionsObj ? PySequence_Size(currentPositionsObj) : 0;
+
+
 		int numJoints = b3GetNumJoints(sm, bodyUniqueId);
+		int dofCount = b3ComputeDofCount(sm, bodyUniqueId);
 
 		int hasNullSpace = 0;
 		int hasJointDamping = 0;
+		int hasCurrentPositions = 0;
 		double* lowerLimits = 0;
 		double* upperLimits = 0;
 		double* jointRanges = 0;
 		double* restPoses = 0;
 		double* jointDamping = 0;
-
-		if (numJoints && (szLowerLimits == numJoints) && (szUpperLimits == numJoints) &&
-			(szJointRanges == numJoints) && (szRestPoses == numJoints))
+		double* currentPositions = 0;
+		
+		if (dofCount && (szLowerLimits == dofCount) && (szUpperLimits == dofCount) &&
+			(szJointRanges == dofCount) && (szRestPoses == dofCount))
 		{
-			int szInBytes = sizeof(double) * numJoints;
+			int szInBytes = sizeof(double) * dofCount;
 			int i;
 			lowerLimits = (double*)malloc(szInBytes);
 			upperLimits = (double*)malloc(szInBytes);
 			jointRanges = (double*)malloc(szInBytes);
 			restPoses = (double*)malloc(szInBytes);
 
-			for (i = 0; i < numJoints; i++)
+			for (i = 0; i < dofCount; i++)
 			{
-				lowerLimits[i] =
-					pybullet_internalGetFloatFromSequence(lowerLimitsObj, i);
-				upperLimits[i] =
-					pybullet_internalGetFloatFromSequence(upperLimitsObj, i);
-				jointRanges[i] =
-					pybullet_internalGetFloatFromSequence(jointRangesObj, i);
-				restPoses[i] =
-					pybullet_internalGetFloatFromSequence(restPosesObj, i);
+				lowerLimits[i] = pybullet_internalGetFloatFromSequence(lowerLimitsObj, i);
+				upperLimits[i] = pybullet_internalGetFloatFromSequence(upperLimitsObj, i);
+				jointRanges[i] = pybullet_internalGetFloatFromSequence(jointRangesObj, i);
+				restPoses[i] =	pybullet_internalGetFloatFromSequence(restPosesObj, i);
 			}
 			hasNullSpace = 1;
 		}
 
-		if (szJointDamping > 0)
+		if (szCurrentPositions > 0)
 		{
-			// We allow the number of joint damping values to be larger than
-			// the number of degrees of freedom (DOFs). On the server side, it does
-			// the check and only sets joint damping for all DOFs.
-			// We can use the number of DOFs here when that is exposed. Since the
-			// number of joints is larger than the number of DOFs (we assume the
-			// joint is either fixed joint or one DOF joint), it is safe to use
-			// number of joints here.
-			if (szJointDamping < numJoints)
+			if (szCurrentPositions != dofCount)
 			{
 				PyErr_SetString(SpamError,
-								"calculateInverseKinematics the size of input joint damping values is smaller than the number of joints.");
+								"calculateInverseKinematics the size of input current positions needs to be equal to the number of degrees of freedom.");
 				return NULL;
 			}
 			else
 			{
+				int szInBytes = sizeof(double) * szCurrentPositions;
+				int i;
+				currentPositions = (double*)malloc(szInBytes);
+				for (i = 0; i < szCurrentPositions; i++)
+				{
+					currentPositions[i] = pybullet_internalGetFloatFromSequence(currentPositionsObj, i);
+				}
+				hasCurrentPositions = 1;
+			}
+		}
+
+		if (szJointDamping > 0)
+		{
+			if (szJointDamping < dofCount)
+			{
+				printf("calculateInverseKinematics: the size of input joint damping values should be equal to the number of degrees of freedom, not using joint damping.");
+			}
+			else
+			{
+				if (szJointDamping != dofCount)
+				{
+					printf("calculateInverseKinematics: the size of input joint damping values should be equal to the number of degrees of freedom, ignoring the additonal values.");
+				}
 				int szInBytes = sizeof(double) * szJointDamping;
 				int i;
 				jointDamping = (double*)malloc(szInBytes);
@@ -8639,15 +8708,28 @@ static PyObject* pybullet_calculateInverseKinematics(PyObject* self,
 			b3SharedMemoryCommandHandle command = b3CalculateInverseKinematicsCommandInit(sm, bodyUniqueId);
 			b3CalculateInverseKinematicsSelectSolver(command, solver);
 
+			if (hasCurrentPositions)
+			{
+				b3CalculateInverseKinematicsSetCurrentPositions(command, dofCount, currentPositions);
+			}
+			if (maxNumIterations>0)
+			{
+				b3CalculateInverseKinematicsSetMaxNumIterations(command,maxNumIterations);
+			}
+			if (residualThreshold>=0)
+			{
+				b3CalculateInverseKinematicsSetResidualThreshold(command,residualThreshold);
+			}
+
 			if (hasNullSpace)
 			{
 				if (hasOrn)
 				{
-					b3CalculateInverseKinematicsPosOrnWithNullSpaceVel(command, numJoints, endEffectorLinkIndex, pos, ori, lowerLimits, upperLimits, jointRanges, restPoses);
+					b3CalculateInverseKinematicsPosOrnWithNullSpaceVel(command, dofCount, endEffectorLinkIndex, pos, ori, lowerLimits, upperLimits, jointRanges, restPoses);
 				}
 				else
 				{
-					b3CalculateInverseKinematicsPosWithNullSpaceVel(command, numJoints, endEffectorLinkIndex, pos, lowerLimits, upperLimits, jointRanges, restPoses);
+					b3CalculateInverseKinematicsPosWithNullSpaceVel(command, dofCount, endEffectorLinkIndex, pos, lowerLimits, upperLimits, jointRanges, restPoses);
 				}
 			}
 			else
@@ -8664,8 +8746,9 @@ static PyObject* pybullet_calculateInverseKinematics(PyObject* self,
 
 			if (hasJointDamping)
 			{
-				b3CalculateInverseKinematicsSetJointDamping(command, numJoints, jointDamping);
+				b3CalculateInverseKinematicsSetJointDamping(command, dofCount, jointDamping);
 			}
+			free(currentPositions);
 			free(jointDamping);
 
 			statusHandle = b3SubmitClientCommandAndWaitStatus(sm, command);
@@ -8754,44 +8837,8 @@ static PyObject* pybullet_calculateInverseDynamics(PyObject* self, PyObject* arg
 			int szObPos = PySequence_Size(objPositionsQ);
 			int szObVel = PySequence_Size(objVelocitiesQdot);
 			int szObAcc = PySequence_Size(objAccelerations);
-			int nj = b3GetNumJoints(sm, bodyUniqueId);
-			int j=0;
-			int dofCountOrg = 0;
-			for (j=0;j<nj;j++)
-			{
-				struct b3JointInfo info;
-				b3GetJointInfo(sm, bodyUniqueId, j, &info);
-				switch (info.m_jointType)
-				{
-				case eRevoluteType:
-					{
-						dofCountOrg+=1;
-						break;
-					}
-				case ePrismaticType:
-					{
-						dofCountOrg+=1;
-						break;
-					}
-				case eSphericalType:
-					{
-						PyErr_SetString(SpamError,
-								"Spherirical joints are not supported in the pybullet binding");
-						return NULL;
-					}
-				case ePlanarType:
-					{
-						PyErr_SetString(SpamError,
-								"Planar joints are not supported in the pybullet binding");
-						return NULL;
-					}
-					default:
-					{
-						//fixed joint has 0-dof and at the moment, we don't deal with planar, spherical etc
-					}
-				}
-			}
-
+		
+			int dofCountOrg = b3ComputeDofCount(sm, bodyUniqueId);
 
 			if (dofCountOrg && (szObPos == dofCountOrg) && (szObVel == dofCountOrg) &&
 				(szObAcc == dofCountOrg))
@@ -9437,6 +9484,10 @@ static PyMethodDef SpamMethods[] = {
 #endif
 	},
 
+	{ "isNumpyEnabled", (PyCFunction)pybullet_isNumpyEnabled, METH_VARARGS | METH_KEYWORDS,
+		"return True if PyBullet was compiled with NUMPY support. This makes the getCameraImage API faster"
+	},
+
 	{"computeViewMatrix", (PyCFunction)pybullet_computeViewMatrix, METH_VARARGS | METH_KEYWORDS,
 	 "Compute a camera viewmatrix from camera eye,  target position and up vector "},
 
@@ -9801,6 +9852,9 @@ initpybullet(void)
 	PyModule_AddIntConstant(m, "URDF_USE_IMPLICIT_CYLINDER", URDF_USE_IMPLICIT_CYLINDER);
 	PyModule_AddIntConstant(m, "URDF_GLOBAL_VELOCITIES_MB", URDF_GLOBAL_VELOCITIES_MB);
 	PyModule_AddIntConstant(m, "MJCF_COLORS_FROM_FILE", MJCF_COLORS_FROM_FILE);
+	PyModule_AddIntConstant(m, "URDF_ENABLE_CACHED_GRAPHICS_SHAPES", URDF_ENABLE_CACHED_GRAPHICS_SHAPES);
+	PyModule_AddIntConstant(m, "URDF_ENABLE_SLEEPING", URDF_ENABLE_SLEEPING);
+
 
 	PyModule_AddIntConstant(m, "URDF_USE_SELF_COLLISION", URDF_USE_SELF_COLLISION);
 	PyModule_AddIntConstant(m, "URDF_USE_SELF_COLLISION_EXCLUDE_PARENT", URDF_USE_SELF_COLLISION_EXCLUDE_PARENT);

@@ -1306,6 +1306,11 @@ bool BulletURDFImporter::getLinkColor2(int linkIndex, UrdfMaterialColor& matCol)
 	return false;
 }
 
+void BulletURDFImporter::setLinkColor2(int linkIndex, struct UrdfMaterialColor& matCol) const
+{
+	m_data->m_linkColors.insert(linkIndex, matCol);
+}
+
 bool BulletURDFImporter::getLinkContactInfo(int urdflinkIndex, URDFLinkContactInfo& contactInfo ) const
 {
 	UrdfLink* const* linkPtr = m_data->m_urdfParser.getModel().m_links.getAtIndex(urdflinkIndex);

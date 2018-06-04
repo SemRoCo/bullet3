@@ -642,7 +642,9 @@ enum EnumCalculateInverseKinematicsFlags
 	IK_HAS_TARGET_ORIENTATION=32,
 	IK_HAS_NULL_SPACE_VELOCITY=64,
 	IK_HAS_JOINT_DAMPING=128,
-	//IK_HAS_CURRENT_JOINT_POSITIONS=256,//not used yet
+	IK_HAS_CURRENT_JOINT_POSITIONS=256,
+	IK_HAS_MAX_ITERATIONS=512,
+	IK_HAS_RESIDUAL_THRESHOLD = 1024,
 };
 
 enum b3ConfigureDebugVisualizerEnum
@@ -695,6 +697,8 @@ enum eURDF_Flags
 	URDF_USE_IMPLICIT_CYLINDER =128,
 	URDF_GLOBAL_VELOCITIES_MB =256,
 	MJCF_COLORS_FROM_FILE=512,
+	URDF_ENABLE_CACHED_GRAPHICS_SHAPES=1024,
+    URDF_ENABLE_SLEEPING=2048,
 };
 
 enum eUrdfGeomTypes //sync with UrdfParser UrdfGeomTypes
@@ -761,12 +765,16 @@ struct b3PhysicsSimulationParameters
 	int m_collisionFilterMode;
 	int m_enableFileCaching;
 	double m_restitutionVelocityThreshold;
-	double 	m_defaultNonContactERP;
+	double m_defaultNonContactERP;
 	double m_frictionERP;
+	double m_defaultGlobalCFM;
+	double m_frictionCFM;
 	int m_enableConeFriction;
 	int m_deterministicOverlappingPairs;
 	double m_allowedCcdPenetration;
 	int m_jointFeedbackMode;
+	double m_solverResidualThreshold;
+	double m_contactSlop;
 };
 
 
