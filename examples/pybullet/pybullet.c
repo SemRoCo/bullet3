@@ -938,15 +938,12 @@ static PyObject* pybullet_changeDynamicsInfo(PyObject* self, PyObject* args, PyO
 		PyErr_SetString(SpamError, "Not connected to physics server.");
 		return NULL;
 	}
-<<<<<<< HEAD
-=======
 	
 	if ((contactStiffness>=0 && contactDamping <0)||(contactStiffness<0 && contactDamping >=0))
 	{
 		PyErr_SetString(SpamError, "Both contactStiffness and contactDamping needs to be set together.");
 		return NULL;
 	}
->>>>>>> c77586a526837c1b50517a313711857bffbeb37a
 
 	{
 		b3SharedMemoryCommandHandle command = b3InitChangeDynamicsInfo(sm);
