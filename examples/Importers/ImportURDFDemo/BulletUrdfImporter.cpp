@@ -559,65 +559,55 @@ bool findExistingMeshFile(
 		return false;
 	}
 
-	std::list<std::string> search_paths;
 	std::string drop_it = "package://";
+	
 	if (fn.substr(0, drop_it.length())==drop_it) {
+		std::string existing_file;
+		std::string search_paths_str;
 		fn = fn.substr(drop_it.length());
+		std::string pkg_name = fn.substr(0, fn.find('/'));
 
 		std::string ros_pkg_path = getenv("ROS_PACKAGE_PATH");
 		size_t pos = 0;
 		while ((pos = ros_pkg_path.find(':')) != std::string::npos) {
-			search_paths.push_back(ros_pkg_path.substr(0, pos));
+			std::string rpp = ros_pkg_path.substr(0, pos);
+			search_paths_str += rpp + '\n';
+
+			std::string attempt;
+
+			if (rpp.substr(rpp.rfind('/') + 1) == pkg_name) {
+				attempt = rpp + fn.substr(pkg_name.length());
+			} else {
+				attempt = rpp + '/' + fn;
+			}
+
+			FILE* f = fopen(attempt.c_str(), "rb");
+			if (f) {
+				existing_file = attempt;
+				fclose(f);
+				break;
+			}
+
 			ros_pkg_path.erase(0, pos + 1);
 		}
 
-		search_paths.push_back(ros_pkg_path);
-	}
-
-
-	std::string existing_file;
-	{
-		std::string attempt = fn;
-		FILE* f = fopen(attempt.c_str(), "rb");
-		if (f)
-		{
-			existing_file = attempt;
-			fclose(f);
+		if (existing_file.empty()) {
+			b3Warning("%s: cannot resolve '%s' to any package in package path\nPaths are:\n%s", error_message_prefix.c_str(), fn.c_str(), search_paths_str.c_str());
+			return false;
+		} else {
+			*out_found_filename = existing_file;
+			return true;
 		}
-	}
-	std::string search_paths_str;
-	if (existing_file.empty())
-	{
-		for (std::list<std::string>::iterator x=search_paths.begin(); x!=search_paths.end(); x++)
-		{
-			if (x == search_paths.begin())
-				search_paths_str = *x;
-			else
-				search_paths_str += '\n' + *x;
-
-			std::string attempt = *x + "/" + fn;
-			FILE* f = fopen(attempt.c_str(), "rb");
-			if (!f)
-			{
-				//b3Printf("%s: tried '%s'", error_message_prefix.c_str(), attempt.c_str());
-				continue;
-			}
+	} else { // NON ROS FILE
+		FILE* f = fopen(fn.c_str(), "rb");
+		if (f) {
 			fclose(f);
-			existing_file = attempt;
-			//b3Printf("%s: found '%s'", error_message_prefix.c_str(), attempt.c_str());
-			break;
+			*out_found_filename = fn;
+			return true;
 		}
-	}
 
-	if (existing_file.empty())
-	{
-		b3Warning("%s: cannot find '%s' in any directory in urdf path\nPaths are:\n%s", error_message_prefix.c_str(), fn.c_str(), search_paths_str.c_str());
+		b3Warning("%s: cannot find '%s'.", error_message_prefix.c_str(), fn.c_str());
 		return false;
-	}
-	else
-	{
-		*out_found_filename = existing_file;
-		return true;
 	}
 }
 
