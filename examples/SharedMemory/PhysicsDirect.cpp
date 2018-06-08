@@ -1157,117 +1157,86 @@ void PhysicsDirect::postProcessStatus(const struct SharedMemoryStatus& serverCmd
 			}
 			break;
 		}
+		case CMD_SYNC_USER_DATA_FAILED:
+		{
+			b3Warning("Synchronizing user data failed.");
+			break;
+		}
+		case CMD_ADD_USER_DATA_FAILED:
+		{
+			b3Warning("Adding user data failed (do the specified body and link exist?)");
+			break;
+		}
+		case CMD_REMOVE_USER_DATA_FAILED:
+		{
+			b3Warning("Removing user data failed");
+			break;
+		}
+		case CMD_ADD_USER_DATA_COMPLETED:
+		{
+			processAddUserData(serverCmd);
+			break;
+		}
+		case CMD_SYNC_USER_DATA_COMPLETED:
+		{
+			B3_PROFILE("CMD_SYNC_USER_DATA_COMPLETED");
+			// Remove all cached user data entries.
+			for(int i=0; i<m_data->m_bodyJointMap.size(); i++)
+			{
+				BodyJointInfoCache2** bodyJointsPtr = m_data->m_bodyJointMap.getAtIndex(i);
+				if (bodyJointsPtr && *bodyJointsPtr)
+				{
+					(*bodyJointsPtr)->m_jointToUserDataMap.clear();
+				}
+			}
+			const int numIdentifiers = serverCmd.m_syncUserDataArgs.m_numUserDataIdentifiers;
+			b3UserDataGlobalIdentifier *identifiers = new b3UserDataGlobalIdentifier[numIdentifiers];
+			memcpy(identifiers, &m_data->m_bulletStreamDataServerToClient[0], numIdentifiers * sizeof(b3UserDataGlobalIdentifier));
+
+			for (int i=0; i<numIdentifiers; i++) {
+				m_data->m_tmpInfoRequestCommand.m_type = CMD_REQUEST_USER_DATA;
+				m_data->m_tmpInfoRequestCommand.m_userDataRequestArgs = identifiers[i];
+
+				bool hasStatus = m_data->m_commandProcessor->processCommand(m_data->m_tmpInfoRequestCommand, m_data->m_tmpInfoStatus, &m_data->m_bulletStreamDataServerToClient[0], SHARED_MEMORY_MAX_STREAM_CHUNK_SIZE);
+
+				b3Clock clock;
+				double startTime = clock.getTimeInSeconds();
+				double timeOutInSeconds = m_data->m_timeOutInSeconds;
+
+				while ((!hasStatus) && (clock.getTimeInSeconds()-startTime < timeOutInSeconds))
+				{
+					hasStatus = m_data->m_commandProcessor->receiveStatus(m_data->m_tmpInfoStatus, &m_data->m_bulletStreamDataServerToClient[0], SHARED_MEMORY_MAX_STREAM_CHUNK_SIZE);
+				}
+
+				if (hasStatus)
+				{
+					processAddUserData(m_data->m_tmpInfoStatus);
+				}
+			}
+			delete[] identifiers;
+			break;
+		}
+		case CMD_REMOVE_USER_DATA_COMPLETED:
+		{
+			const b3UserDataGlobalIdentifier userDataGlobalId = serverCmd.m_removeUserDataResponseArgs;
+			BodyJointInfoCache2** bodyJointsPtr = m_data->m_bodyJointMap[userDataGlobalId.m_bodyUniqueId];
+			if (bodyJointsPtr && *bodyJointsPtr) {
+				UserDataCache *userDataCachePtr = (*bodyJointsPtr)->m_jointToUserDataMap[userDataGlobalId.m_linkIndex];
+				if (userDataCachePtr) 
+				{
+					SharedMemoryUserData* userDataPtr = (userDataCachePtr)->m_userDataMap[userDataGlobalId.m_userDataId];
+					if (userDataPtr) {
+						(userDataCachePtr)->m_keyToUserDataIdMap.remove((userDataPtr)->m_key.c_str());
+						(userDataCachePtr)->m_userDataMap.remove(userDataGlobalId.m_userDataId);
+					}
+				}
+			}
+			break;
+		}
 		default:
 		{
 			//b3Warning("Unknown server status type");
 		}
-<<<<<<< HEAD
-=======
-		break;
-	}
-	case CMD_RESTORE_STATE_FAILED:
-	{
-		b3Warning("restoreState failed");
-		break;
-	}
-	case CMD_RESTORE_STATE_COMPLETED:
-	{
-		break;
-	}
-	case CMD_BULLET_SAVING_COMPLETED:
-	{
-		break;
-	}
-	case CMD_LOAD_SOFT_BODY_FAILED:
-	{
-		b3Warning("loadSoftBody failed");
-		break;
-	}
-	case CMD_LOAD_SOFT_BODY_COMPLETED:
-	{
-		break;
-	}
-	case CMD_SYNC_USER_DATA_FAILED:
-	{
-		b3Warning("Synchronizing user data failed.");
-		break;
-	}
-	case CMD_ADD_USER_DATA_FAILED:
-	{
-		b3Warning("Adding user data failed (do the specified body and link exist?)");
-		break;
-	}
-	case CMD_REMOVE_USER_DATA_FAILED:
-	{
-		b3Warning("Removing user data failed");
-		break;
-	}
-	case CMD_ADD_USER_DATA_COMPLETED:
-	{
-		processAddUserData(serverCmd);
-		break;
-	}
-	case CMD_SYNC_USER_DATA_COMPLETED:
-	{
-		B3_PROFILE("CMD_SYNC_USER_DATA_COMPLETED");
-		// Remove all cached user data entries.
-		for(int i=0; i<m_data->m_bodyJointMap.size(); i++)
-		{
-			BodyJointInfoCache2** bodyJointsPtr = m_data->m_bodyJointMap.getAtIndex(i);
-			if (bodyJointsPtr && *bodyJointsPtr)
-			{
-				(*bodyJointsPtr)->m_jointToUserDataMap.clear();
-			}
-		}
-		const int numIdentifiers = serverCmd.m_syncUserDataArgs.m_numUserDataIdentifiers;
-		b3UserDataGlobalIdentifier *identifiers = new b3UserDataGlobalIdentifier[numIdentifiers];
-		memcpy(identifiers, &m_data->m_bulletStreamDataServerToClient[0], numIdentifiers * sizeof(b3UserDataGlobalIdentifier));
-
-		for (int i=0; i<numIdentifiers; i++) {
-			m_data->m_tmpInfoRequestCommand.m_type = CMD_REQUEST_USER_DATA;
-			m_data->m_tmpInfoRequestCommand.m_userDataRequestArgs = identifiers[i];
-
-			bool hasStatus = m_data->m_commandProcessor->processCommand(m_data->m_tmpInfoRequestCommand, m_data->m_tmpInfoStatus, &m_data->m_bulletStreamDataServerToClient[0], SHARED_MEMORY_MAX_STREAM_CHUNK_SIZE);
-
-			b3Clock clock;
-			double startTime = clock.getTimeInSeconds();
-			double timeOutInSeconds = m_data->m_timeOutInSeconds;
-
-			while ((!hasStatus) && (clock.getTimeInSeconds()-startTime < timeOutInSeconds))
-			{
-				hasStatus = m_data->m_commandProcessor->receiveStatus(m_data->m_tmpInfoStatus, &m_data->m_bulletStreamDataServerToClient[0], SHARED_MEMORY_MAX_STREAM_CHUNK_SIZE);
-			}
-
-			if (hasStatus)
-			{
-				processAddUserData(m_data->m_tmpInfoStatus);
-			}
-		}
-		delete[] identifiers;
-		break;
-	}
-	case CMD_REMOVE_USER_DATA_COMPLETED:
-	{
-		const b3UserDataGlobalIdentifier userDataGlobalId = serverCmd.m_removeUserDataResponseArgs;
-		BodyJointInfoCache2** bodyJointsPtr = m_data->m_bodyJointMap[userDataGlobalId.m_bodyUniqueId];
-		if (bodyJointsPtr && *bodyJointsPtr) {
-			UserDataCache *userDataCachePtr = (*bodyJointsPtr)->m_jointToUserDataMap[userDataGlobalId.m_linkIndex];
-			if (userDataCachePtr) 
-			{
-				SharedMemoryUserData* userDataPtr = (userDataCachePtr)->m_userDataMap[userDataGlobalId.m_userDataId];
-				if (userDataPtr) {
-					(userDataCachePtr)->m_keyToUserDataIdMap.remove((userDataPtr)->m_key.c_str());
-					(userDataCachePtr)->m_userDataMap.remove(userDataGlobalId.m_userDataId);
-				}
-			}
-		}
-		break;
-	}
-	default:
-	{
-		//b3Warning("Unknown server status type");
-	}
->>>>>>> bullet/master
 	};
 }
 bool PhysicsDirect::submitClientCommand(const struct SharedMemoryCommand& command)

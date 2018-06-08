@@ -10215,7 +10215,6 @@ void PhysicsServerCommandProcessor::setVRTeleportOrientation(const btQuaternion&
 {
 	gVRTeleportOrn = vrTeleportOrn;
 }
-<<<<<<< HEAD
 
 
 #ifndef SKIP_SOFT_BODY_MULTI_BODY_DYNAMICS_WORLD
@@ -10287,5 +10286,3 @@ void PhysicsServerCommandProcessor::setVRTeleportOrientation(const btQuaternion&
 	}
 	
 #endif
-=======
->>>>>>> bullet/master
