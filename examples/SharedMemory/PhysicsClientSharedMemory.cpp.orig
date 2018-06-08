@@ -1304,6 +1304,7 @@ const SharedMemoryStatus* PhysicsClientSharedMemory::processServerStatus() {
 				{
 					break;
 				}
+<<<<<<< HEAD
 			case CMD_ADD_NODE_FORCE_COMPLETED:
 				break;
 			case CMD_ADD_NODE_FORCE_FAILED:
@@ -1319,6 +1320,7 @@ const SharedMemoryStatus* PhysicsClientSharedMemory::processServerStatus() {
 			case CMD_SET_NODE_WEIGHT_FAILED:
 				b3Warning("set node weight failed");
 				break;
+=======
 			case CMD_SYNC_USER_DATA_FAILED:
 			{
 				b3Warning("Synchronizing user data failed.");
@@ -1346,6 +1348,7 @@ const SharedMemoryStatus* PhysicsClientSharedMemory::processServerStatus() {
 			{
 				break;
 			}
+>>>>>>> bullet/master
             default: {
                 b3Error("Unknown server status %d\n", serverCmd.m_type);
                 btAssert(0);

@@ -36,6 +36,7 @@
 #define MAX_SDF_FILENAME_LENGTH 1024
 #define MAX_FILENAME_LENGTH MAX_URDF_FILENAME_LENGTH
 #define MAX_NUM_LINKS MAX_DEGREE_OF_FREEDOM
+#define MAX_USER_DATA_KEY_LENGTH MAX_URDF_FILENAME_LENGTH
 
 struct TmpFloat3 
 {
@@ -926,6 +927,7 @@ enum eCreateMultiBodyEnum
 {
 	MULTI_BODY_HAS_BASE=1,
 	MULT_BODY_USE_MAXIMAL_COORDINATES=2,
+	MULT_BODY_HAS_FLAGS=4,
 };
 struct b3CreateMultiBodyArgs
 {
@@ -947,7 +949,7 @@ struct b3CreateMultiBodyArgs
 	int m_linkParentIndices[MAX_CREATE_MULTI_BODY_LINKS];
 	int m_linkJointTypes[MAX_CREATE_MULTI_BODY_LINKS];
 	double m_linkJointAxis[3*MAX_CREATE_MULTI_BODY_LINKS];
-
+	int m_flags;
 	#if 0
 	std::string m_name;
 	std::string m_sourceFile;
@@ -997,6 +999,31 @@ struct AppendNodeAnchorArgs {
 	float m_influence;
 };
 // ~SOFTBODY COMMANDS
+struct SyncUserDataArgs
+{
+	// User data identifiers stored in m_bulletStreamDataServerToClientRefactor
+	// as as array of b3UserDataGlobalIdentifier objects
+	int m_numUserDataIdentifiers;
+};
+
+struct UserDataResponseArgs
+{
+	b3UserDataGlobalIdentifier m_userDataGlobalId;
+	int m_valueType;
+	int m_valueLength;
+	char m_key[MAX_USER_DATA_KEY_LENGTH];
+	// Value data stored in m_bulletStreamDataServerToClientRefactor.
+};
+
+struct AddUserDataRequestArgs
+{
+	int m_bodyUniqueId;
+	int m_linkIndex;
+	int m_valueType;
+	int m_valueLength;
+	char m_key[MAX_USER_DATA_KEY_LENGTH];
+	// Value data stored in m_bulletStreamDataServerToClientRefactor.
+};
 
 struct SharedMemoryCommand
 {
@@ -1057,6 +1084,9 @@ struct SharedMemoryCommand
 		struct ApplyNodeForceArgs m_nodeForceArgs;
 		struct SetNodeMassArgs m_nodeMassArgs;
 		struct AppendNodeAnchorArgs m_nodeAnchorArgs;
+		struct b3UserDataGlobalIdentifier m_userDataRequestArgs;
+		struct AddUserDataRequestArgs m_addUserDataRequestArgs;
+		struct b3UserDataGlobalIdentifier m_removeUserDataRequestArgs;
     };
 };
 
@@ -1078,11 +1108,6 @@ struct SendOverlappingObjectsArgs
 	int m_numOverlappingObjectsCopied;
 	int m_numRemainingOverlappingObjects;
 };
-
-
-
-
-
 
 struct SharedMemoryStatus
 {
@@ -1134,6 +1159,9 @@ struct SharedMemoryStatus
 		struct b3StateSerializationArguments m_saveStateResultArgs;
 		struct b3LoadSoftBodyResultArgs m_loadSoftBodyResultArguments;
 		struct SendCollisionShapeDataArgs m_sendCollisionShapeArgs;
+		struct SyncUserDataArgs m_syncUserDataArgs;
+		struct UserDataResponseArgs m_userDataResponseArgs;
+		struct b3UserDataGlobalIdentifier m_removeUserDataResponseArgs;
 	};
 };
 
