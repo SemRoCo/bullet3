@@ -562,10 +562,12 @@ bool findExistingMeshFile(
 	std::string drop_it = "package://";
 	
 	if (fn.substr(0, drop_it.length())==drop_it) {
+		b3Printf("Trying to resolve ros path %s", fn.c_str());
 		std::string existing_file;
 		std::string search_paths_str;
 		fn = fn.substr(drop_it.length());
 		std::string pkg_name = fn.substr(0, fn.find('/'));
+		b3Printf("Pkg name %s", pkg_name.c_str());
 
 		std::string ros_pkg_path = getenv("ROS_PACKAGE_PATH");
 		size_t pos = 0;
@@ -581,12 +583,17 @@ bool findExistingMeshFile(
 				attempt = rpp + '/' + fn;
 			}
 
+			b3Printf("Attempting to open %s", attempt.c_str());
+
 			FILE* f = fopen(attempt.c_str(), "rb");
 			if (f) {
 				existing_file = attempt;
+				b3Printf("Success!");
 				fclose(f);
 				break;
 			}
+
+			b3Printf("Failed!");
 
 			ros_pkg_path.erase(0, pos + 1);
 		}

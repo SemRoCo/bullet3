@@ -6918,8 +6918,8 @@ static PyObject* pybullet_createRigidBody(PyObject* self, PyObject* args, PyObje
 
 	PyObject* halfExtentsObj=0;
 
-	static char* kwlist[] = {"shapeType", "radius", "halfExtents", "height", "position", "orientation", "color", "physicsClientId", NULL};
-	if (!PyArg_ParseTupleAndKeywords(args, keywds, "i|dOdOOOi", kwlist,	&shapeType, &radius, &halfExtentsObj, &height, &positionObj, &orientationObj, &colorObj, &physicsClientId)) {
+	static char* kwlist[] = {"shapeType", "radius", "halfExtents", "height", "mass", "position", "orientation", "color", "physicsClientId", NULL};
+	if (!PyArg_ParseTupleAndKeywords(args, keywds, "i|dOddOOOi", kwlist,	&shapeType, &radius, &halfExtentsObj, &height, &mass, &positionObj, &orientationObj, &colorObj, &physicsClientId)) {
 		return NULL;
 	}
 	
