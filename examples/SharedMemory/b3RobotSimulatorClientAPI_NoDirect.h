@@ -60,6 +60,30 @@ struct b3RobotSimulatorLoadFileResults
 	}
 };
 
+struct b3RobotSimulatorChangeVisualShapeArgs
+{
+    int m_objectUniqueId;
+    int m_linkIndex;
+    int m_shapeIndex;
+    int m_textureUniqueId;
+    btVector4 m_rgbaColor;
+    bool m_hasRgbaColor;
+    btVector3 m_specularColor;
+    bool m_hasSpecularColor;
+    
+    b3RobotSimulatorChangeVisualShapeArgs()
+    :m_objectUniqueId(-1),
+    m_linkIndex(-1),
+    m_shapeIndex(-1),
+    m_textureUniqueId(-1),
+    m_rgbaColor(0,0,0,1),
+    m_hasRgbaColor(false),
+    m_specularColor(1,1,1),
+    m_hasSpecularColor(false)
+    {
+    }
+};
+
 struct b3RobotSimulatorJointMotorArgs
 {
 	int m_controlMode;
@@ -200,39 +224,53 @@ struct b3RobotSimulatorGetCameraImageArgs
 	}
 };
 
-struct b3RobotSimulatorSetPhysicsEngineParameters 
-{
-	double m_fixedTimeStep;
-	int m_numSolverIterations;
-	int m_useSplitImpulse;
-	double m_splitImpulsePenetrationThreshold;
-	int m_numSubSteps;
-	int m_collisionFilterMode;
-	double m_contactBreakingThreshold;
-	int m_maxNumCmdPer1ms;
-	int m_enableFileCaching;
-	double m_restitutionVelocityThreshold;
-	double m_erp;
-	double m_contactERP;
-	double m_frictionERP;
-	double m_solverResidualThreshold;
 
+
+
+struct b3RobotSimulatorSetPhysicsEngineParameters : b3PhysicsSimulationParameters
+{
+	
 	b3RobotSimulatorSetPhysicsEngineParameters()
-		: m_fixedTimeStep(-1),
-		m_numSolverIterations(-1),
-		m_useSplitImpulse(-1),
-		m_splitImpulsePenetrationThreshold(-1),
-		m_numSubSteps(-1),
-		m_collisionFilterMode(-1),
-		m_contactBreakingThreshold(-1),
-		m_maxNumCmdPer1ms(-1),
-		m_enableFileCaching(-1),
-		m_restitutionVelocityThreshold(-1),
-		m_erp(-1),
-		m_contactERP(-1),
-		m_frictionERP(-1),
-	  	m_solverResidualThreshold(-1)
-	{}
+	{
+		
+		m_deltaTime=-1;
+		m_gravityAcceleration[0] = 0;
+		m_gravityAcceleration[1] = 0;
+		m_gravityAcceleration[2] = 0;
+		
+		m_numSimulationSubSteps=-1;
+		m_numSolverIterations=-1;
+		m_useRealTimeSimulation = -1;
+		m_useSplitImpulse = -1;
+		m_splitImpulsePenetrationThreshold =-1;
+		m_contactBreakingThreshold = -1;
+		m_internalSimFlags = -1;
+		m_defaultContactERP = -1;
+		m_collisionFilterMode = -1;
+		m_enableFileCaching = -1;
+		m_restitutionVelocityThreshold = -1;
+		m_defaultNonContactERP = -1;
+		m_frictionERP = -1;
+		m_defaultGlobalCFM = -1;
+		m_frictionCFM = -1;
+		m_enableConeFriction = -1;
+		m_deterministicOverlappingPairs = -1;
+		m_allowedCcdPenetration = -1;
+		m_jointFeedbackMode = -1;
+		m_solverResidualThreshold = -1;
+		m_contactSlop = -1;
+		
+		m_collisionFilterMode=-1;
+		m_contactBreakingThreshold=-1;
+		
+		m_enableFileCaching=-1;
+		m_restitutionVelocityThreshold=-1;
+		
+		m_frictionERP=-1;
+	  	m_solverResidualThreshold=-1;
+
+		
+	}
 };
 
 struct b3RobotSimulatorChangeDynamicsArgs
@@ -410,6 +448,54 @@ struct b3RobotSimulatorCreateMultiBodyArgs
 };
 
 
+struct b3RobotJointInfo : public b3JointInfo
+{
+	b3RobotJointInfo()
+	{
+		m_linkName[0] = 0;
+		m_jointName[0] = 0;
+		m_jointType = eFixedType;
+		m_qIndex = -1;
+		m_uIndex = -1;
+		m_jointIndex = -1;
+		m_flags = 0;
+		m_jointDamping = 0;
+		m_jointFriction = 0;
+		m_jointLowerLimit = 1;
+		m_jointUpperLimit = -1;
+		m_jointMaxForce = 500;
+		m_jointMaxVelocity = 100;
+		m_parentIndex = -1;
+
+		//position
+		m_parentFrame[0] = 0;
+		m_parentFrame[1] = 0;
+		m_parentFrame[2] = 0;
+		//orientation quaternion [x,y,z,w]
+		m_parentFrame[3] = 0;
+		m_parentFrame[4] = 0;
+		m_parentFrame[5] = 0;
+		m_parentFrame[6] = 1;
+
+				//position
+		m_childFrame[0] = 0;
+		m_childFrame[1] = 0;
+		m_childFrame[2] = 0;
+		//orientation quaternion [x,y,z,w]
+		m_childFrame[3] = 0;
+		m_childFrame[4] = 0;
+		m_childFrame[5] = 0;
+		m_childFrame[6] = 1;
+
+
+		m_jointAxis[0] = 0;
+		m_jointAxis[1] = 0;
+		m_jointAxis[2] = 1;
+	}
+};
+	
+
+
 class b3RobotSimulatorClientAPI_NoDirect
 {
 protected:
@@ -441,7 +527,14 @@ public:
 	bool loadSDF(const std::string& fileName, b3RobotSimulatorLoadFileResults& results, const struct b3RobotSimulatorLoadSdfFileArgs& args = b3RobotSimulatorLoadSdfFileArgs());
 	bool loadMJCF(const std::string& fileName, b3RobotSimulatorLoadFileResults& results);
 	bool loadBullet(const std::string& fileName, b3RobotSimulatorLoadFileResults& results);
-
+	bool saveBullet(const std::string& fileName);
+	
+    int loadTexture(const std::string& fileName);
+    
+    bool changeVisualShape(const struct b3RobotSimulatorChangeVisualShapeArgs& args);
+    
+	bool savePythonWorld(const std::string& fileName);
+	
 	bool getBodyInfo(int bodyUniqueId, struct b3BodyInfo* bodyInfo);
 
 	bool getBasePositionAndOrientation(int bodyUniqueId, btVector3& basePosition, btQuaternion& baseOrientation) const;
@@ -457,9 +550,11 @@ public:
 	int createConstraint(int parentBodyIndex, int parentJointIndex, int childBodyIndex, int childJointIndex, b3JointInfo* jointInfo);
 
 	int changeConstraint(int constraintId, b3JointInfo* jointInfo);
-
+	
 	void removeConstraint(int constraintId);
 
+	bool getConstraintInfo(int constraintUniqueId, struct b3UserConstraint& constraintInfo);
+	
 	bool getJointState(int bodyUniqueId, int jointIndex, struct b3JointSensorState* state);
 
 	bool getJointStates(int bodyUniqueId, b3JointStates2& state);
@@ -490,8 +585,6 @@ public:
 	bool calculateInverseKinematics(const struct b3RobotSimulatorInverseKinematicArgs& args, struct b3RobotSimulatorInverseKinematicsResults& results);
 
 	bool getBodyJacobian(int bodyUniqueId, int linkIndex, const double* localPosition, const double* jointPositions, const double* jointVelocities, const double* jointAccelerations, double* linearJacobian, double* angularJacobian);
-
-	bool getLinkState(int bodyUniqueId, int linkIndex, b3LinkState* linkState);
 
 	void configureDebugVisualizer(enum b3ConfigureDebugVisualizerEnum flag, int enable);
 	void resetDebugVisualizerCamera(double cameraDistance, double cameraPitch, double cameraYaw, const btVector3& targetPos);
@@ -540,7 +633,9 @@ public:
 
 	bool setJointMotorControlArray(int bodyUniqueId, struct b3RobotSimulatorJointMotorArrayArgs &args);
 
-	bool setPhysicsEngineParameter(struct b3RobotSimulatorSetPhysicsEngineParameters &args);
+	bool setPhysicsEngineParameter(const struct b3RobotSimulatorSetPhysicsEngineParameters&args);
+	
+	bool getPhysicsEngineParameters(struct b3RobotSimulatorSetPhysicsEngineParameters&args);
 
 	bool applyExternalForce(int objectUniqueId, int linkIndex, double *force, double *position, int flags);
 
@@ -581,9 +676,16 @@ public:
 
 	bool getCollisionShapeData(int bodyUniqueId, int linkIndex, b3CollisionShapeInformation &collisionShapeInfo);
 
-	bool getVisualShapeData(int bodyUniqueId, b3VisualShapeInformation &visualShapeInfo);
-	
+	bool getVisualShapeData(int bodyUniqueId, struct b3VisualShapeInformation &visualShapeInfo);
 
+	int saveStateToMemory();
+	void restoreStateFromMemory(int stateId);
+
+	int getAPIVersion() const
+	{
+		return SHARED_MEMORY_MAGIC_NUMBER;
+	}
+	void setAdditionalSearchPath(const std::string& path);
 };
 
 

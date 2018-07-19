@@ -38,7 +38,8 @@
 #define MAX_NUM_LINKS MAX_DEGREE_OF_FREEDOM
 #define MAX_USER_DATA_KEY_LENGTH MAX_URDF_FILENAME_LENGTH
 
-struct TmpFloat3 
+
+struct TmpFloat3
 {
     float m_x;
     float m_y;
@@ -50,7 +51,7 @@ __inline
 #else
 inline
 #endif
-TmpFloat3 CreateTmpFloat3(float x, float y, float z) 
+TmpFloat3 CreateTmpFloat3(float x, float y, float z)
 {
     TmpFloat3 tmp;
     tmp.m_x = x;
@@ -166,6 +167,7 @@ enum EnumChangeDynamicsInfoFlags
 	CHANGE_DYNAMICS_INFO_SET_LOCAL_INERTIA_DIAGONAL = 1024,
 	CHANGE_DYNAMICS_INFO_SET_CCD_SWEPT_SPHERE_RADIUS = 2048,
 	CHANGE_DYNAMICS_INFO_SET_CONTACT_PROCESSING_THRESHOLD = 4096,
+	CHANGE_DYNAMICS_INFO_SET_ACTIVATION_STATE = 8192,
 };
 
 struct ChangeDynamicsInfoArgs
@@ -186,6 +188,7 @@ struct ChangeDynamicsInfoArgs
 	int m_frictionAnchor;
 	double m_ccdSweptSphereRadius;
 	double m_contactProcessingThreshold;
+	int m_activationState;
 };
 
 struct GetDynamicsInfoArgs
@@ -266,7 +269,7 @@ enum EnumRequestPixelDataUpdateFlags
 	REQUEST_PIXEL_ARGS_HAS_PROJECTIVE_TEXTURE_MATRICES=1024,
 
 	//don't exceed (1<<15), because this enum is shared with EnumRenderer in SharedMemoryPublic.h
-	
+
 };
 
 enum EnumRequestContactDataUpdateFlags
@@ -279,15 +282,23 @@ enum EnumRequestContactDataUpdateFlags
 
 struct RequestRaycastIntersections
 {
-	int m_numRays;
-	double m_rayFromPositions[MAX_RAY_INTERSECTION_BATCH_SIZE][3];
-	double m_rayToPositions[MAX_RAY_INTERSECTION_BATCH_SIZE][3];
+	// The number of threads that Bullet may use to perform the ray casts.
+	// 0: Let Bullet decide
+	// 1: Use a single thread (i.e. no multi-threading)
+	// 2 or more: Number of threads to use.
+	int m_numThreads;
+	int m_numCommandRays;
+	//m_numCommandRays command rays are stored in m_fromToRays
+	b3RayData m_fromToRays[MAX_RAY_INTERSECTION_BATCH_SIZE];
+
+	int m_numStreamingRays;
+	//streaming ray data stored in shared memory streaming part. (size m_numStreamingRays )
 };
 
 struct SendRaycastHits
 {
 	int m_numRaycastHits;
-	b3RayHitInfo m_rayHits[MAX_RAY_INTERSECTION_BATCH_SIZE];
+	// Actual ray result data stored in shared memory streaming part.
 };
 
 struct RequestContactDataArgs
@@ -392,29 +403,29 @@ struct SendDesiredStateArgs
 {
 	int m_bodyUniqueId;
 	int m_controlMode;
-	
+
 	//PD parameters in case m_controlMode == CONTROL_MODE_POSITION_VELOCITY_PD
 	double m_Kp[MAX_DEGREE_OF_FREEDOM];//indexed by degree of freedom, 6 for base, and then the dofs for each link
 	double m_Kd[MAX_DEGREE_OF_FREEDOM];//indexed by degree of freedom, 6 for base, and then the dofs for each link
 	double m_rhsClamp[MAX_DEGREE_OF_FREEDOM];
 
     int m_hasDesiredStateFlags[MAX_DEGREE_OF_FREEDOM];
-    
+
 	//desired state is only written by the client, read-only access by server is expected
 
-	//m_desiredStateQ is indexed by position variables, 
+	//m_desiredStateQ is indexed by position variables,
 	//starting with 3 base position variables, 4 base orientation variables (quaternion), then link position variables
     double m_desiredStateQ[MAX_DEGREE_OF_FREEDOM];
-    
+
 
 	//m_desiredStateQdot is index by velocity degrees of freedom, 3 linear and 3 angular variables for the base and then link velocity variables
     double m_desiredStateQdot[MAX_DEGREE_OF_FREEDOM];
-	
+
 	//m_desiredStateForceTorque is either the actual applied force/torque (in CONTROL_MODE_TORQUE) or
 	//or the maximum applied force/torque for the PD/motor/constraint to reach the desired velocity in CONTROL_MODE_VELOCITY and CONTROL_MODE_POSITION_VELOCITY_PD mode
 	//indexed by degree of freedom, 6 dof base, and then dofs for each link
     double m_desiredStateForceTorque[MAX_DEGREE_OF_FREEDOM];
-    
+
 };
 
 enum EnumSimDesiredStateUpdateFlags
@@ -428,13 +439,13 @@ enum EnumSimDesiredStateUpdateFlags
 };
 
 
-	
+
 
 enum EnumSimParamUpdateFlags
 {
 	SIM_PARAM_UPDATE_DELTA_TIME=1,
 	SIM_PARAM_UPDATE_GRAVITY=2,
-	SIM_PARAM_UPDATE_NUM_SOLVER_ITERATIONS=4,	
+	SIM_PARAM_UPDATE_NUM_SOLVER_ITERATIONS=4,
 	SIM_PARAM_UPDATE_NUM_SIMULATION_SUB_STEPS=8,
 	SIM_PARAM_UPDATE_REAL_TIME_SIMULATION = 16,
 	SIM_PARAM_UPDATE_DEFAULT_CONTACT_ERP=32,
@@ -455,6 +466,7 @@ enum EnumSimParamUpdateFlags
 	SIM_PARAM_UPDATE_DEFAULT_FRICTION_CFM = 1048576,
 	SIM_PARAM_UPDATE_SOLVER_RESIDULAL_THRESHOLD = 2097152,
 	SIM_PARAM_UPDATE_CONTACT_SLOP = 4194304,
+	SIM_PARAM_ENABLE_SAT = 8388608,
 };
 
 enum EnumLoadSoftBodyUpdateFlags
@@ -500,7 +512,7 @@ struct SendActualStateArgs
 	int m_numDegreeOfFreedomU;
 
     double m_rootLocalInertialFrame[7];
-   
+
 	  //actual state is only written by the server, read-only access by client is expected
     double m_actualStateQ[MAX_DEGREE_OF_FREEDOM];
     double m_actualStateQdot[MAX_DEGREE_OF_FREEDOM];
@@ -509,7 +521,7 @@ struct SendActualStateArgs
     double m_jointReactionForces[6*MAX_DEGREE_OF_FREEDOM];
 
     double m_jointMotorForce[MAX_DEGREE_OF_FREEDOM];
-    
+
     double m_linkState[7*MAX_NUM_LINKS];
 	double m_linkWorldVelocities[6*MAX_NUM_LINKS];//linear velocity and angular velocity in world space (x/y/z each).
     double m_linkLocalInertialFrames[7*MAX_NUM_LINKS];
@@ -520,7 +532,7 @@ struct b3SendCollisionInfoArgs
 	int m_numLinks;
 	double m_rootWorldAABBMin[3];
 	double m_rootWorldAABBMax[3];
- 
+
 	double m_linkWorldAABBsMin[3*MAX_NUM_LINKS];
 	double m_linkWorldAABBsMax[3*MAX_NUM_LINKS];
 };
@@ -542,14 +554,14 @@ struct CreateSensorArgs
     int m_bodyUniqueId;
     int m_numJointSensorChanges;
     int m_sensorType[MAX_DEGREE_OF_FREEDOM];
-    
+
 ///todo: clean up the duplication, make sure no-one else is using those members directly (use C-API header instead)
     int m_jointIndex[MAX_DEGREE_OF_FREEDOM];
     int m_enableJointForceSensor[MAX_DEGREE_OF_FREEDOM];
 
     int m_linkIndex[MAX_DEGREE_OF_FREEDOM];
     int m_enableSensor[MAX_DEGREE_OF_FREEDOM];
-    
+
 };
 
 typedef  struct SharedMemoryCommand SharedMemoryCommand_t;
@@ -600,10 +612,10 @@ struct SdfLoadedArgs
     int m_bodyUniqueIds[MAX_SDF_BODIES];
     int m_numUserConstraints;
 	int m_userConstraintUniqueIds[MAX_SDF_BODIES];
-    
+
     ///@todo(erwincoumans) load cameras, lights etc
-    //int m_numCameras; 
-    //int m_numLights; 
+    //int m_numCameras;
+    //int m_numLights;
 };
 
 
@@ -717,7 +729,7 @@ enum EnumUserConstraintFlags
 	USER_CONSTRAINT_CHANGE_FRAME_ORN_IN_B=16,
 	USER_CONSTRAINT_CHANGE_MAX_FORCE=32,
 	USER_CONSTRAINT_REQUEST_INFO=64,
-	USER_CONSTRAINT_CHANGE_GEAR_RATIO=128,	
+	USER_CONSTRAINT_CHANGE_GEAR_RATIO=128,
 	USER_CONSTRAINT_CHANGE_GEAR_AUX_LINK=256,
 	USER_CONSTRAINT_CHANGE_RELATIVE_POSITION_TARGET=512,
 	USER_CONSTRAINT_CHANGE_ERP=1024,
@@ -737,7 +749,7 @@ enum EnumUserDebugDrawFlags
     USER_DEBUG_HAS_LINE=1,
 	USER_DEBUG_HAS_TEXT=2,
 	USER_DEBUG_REMOVE_ONE_ITEM=4,
-	USER_DEBUG_REMOVE_ALL=8,	
+	USER_DEBUG_REMOVE_ALL=8,
 	USER_DEBUG_SET_CUSTOM_OBJECT_COLOR = 16,
 	USER_DEBUG_REMOVE_CUSTOM_OBJECT_COLOR = 32,
 	USER_DEBUG_ADD_PARAMETER=64,
@@ -754,7 +766,7 @@ struct UserDebugDrawArgs
 	double	m_debugLineToXYZ[3];
 	double	m_debugLineColorRGB[3];
 	double	m_lineWidth;
-	
+
 	double m_lifeTime;
 	int m_itemUniqueId;
 
@@ -869,26 +881,26 @@ struct ConfigureOpenGLVisualizerRequest
     double m_cameraPitch;
     double m_cameraYaw;
     double m_cameraTargetPosition[3];
-  
+
     int m_setFlag;
     int m_setEnabled;
 };
 
-enum 
+enum
 {
 	URDF_GEOM_HAS_RADIUS = 1,
 };
 
 struct b3CreateUserShapeData
 {
-	int m_type;//see UrdfGeomTypes	
+	int m_type;//see UrdfGeomTypes
 
 	int m_hasChildTransform;
 	double m_childPosition[3];
 	double m_childOrientation[4];
 
 	double m_sphereRadius;
-	double m_boxHalfExtents[3];	
+	double m_boxHalfExtents[3];
 	double m_capsuleRadius;
 	double m_capsuleHeight;
 	int		m_hasFromTo;
@@ -1002,13 +1014,20 @@ struct AppendNodeAnchorArgs {
 struct SyncUserDataArgs
 {
 	// User data identifiers stored in m_bulletStreamDataServerToClientRefactor
-	// as as array of b3UserDataGlobalIdentifier objects
+	// as as array of integers.
 	int m_numUserDataIdentifiers;
+};
+
+struct UserDataRequestArgs {
+  int m_userDataId;
 };
 
 struct UserDataResponseArgs
 {
-	b3UserDataGlobalIdentifier m_userDataGlobalId;
+	int m_userDataId;
+	int m_bodyUniqueId;
+	int m_linkIndex;
+	int m_visualShapeIndex;
 	int m_valueType;
 	int m_valueLength;
 	char m_key[MAX_USER_DATA_KEY_LENGTH];
@@ -1019,6 +1038,7 @@ struct AddUserDataRequestArgs
 {
 	int m_bodyUniqueId;
 	int m_linkIndex;
+	int m_visualShapeIndex;
 	int m_valueType;
 	int m_valueLength;
 	char m_key[MAX_USER_DATA_KEY_LENGTH];
@@ -1030,7 +1050,8 @@ struct SharedMemoryCommand
 	int m_type;
 	smUint64_t	m_timeStamp;
 	int	m_sequenceNumber;
-	
+
+
 	//m_updateFlags is a bit fields to tell which parameters need updating
     //for example m_updateFlags = SIM_PARAM_UPDATE_DELTA_TIME | SIM_PARAM_UPDATE_NUM_SOLVER_ITERATIONS;
     int m_updateFlags;
@@ -1080,19 +1101,21 @@ struct SharedMemoryCommand
 		struct b3SearchPathfArgs m_searchPathArgs;
 		struct b3CustomCommand m_customCommandArgs;
 		struct b3StateSerializationArguments m_loadStateArguments;
-		struct RequestCollisionShapeDataArgs m_requestCollisionShapeDataArguments;		
+		struct RequestCollisionShapeDataArgs m_requestCollisionShapeDataArguments;
+
 		struct ApplyNodeForceArgs m_nodeForceArgs;
 		struct SetNodeMassArgs m_nodeMassArgs;
 		struct AppendNodeAnchorArgs m_nodeAnchorArgs;
-		struct b3UserDataGlobalIdentifier m_userDataRequestArgs;
+		struct UserDataRequestArgs m_userDataRequestArgs;
+
 		struct AddUserDataRequestArgs m_addUserDataRequestArgs;
-		struct b3UserDataGlobalIdentifier m_removeUserDataRequestArgs;
+		struct UserDataRequestArgs m_removeUserDataRequestArgs;
     };
 };
 
 struct RigidBodyCreateArgs
 {
-	int m_bodyUniqueId; 
+	int m_bodyUniqueId;
 };
 
 struct SendContactDataArgs
@@ -1112,15 +1135,15 @@ struct SendOverlappingObjectsArgs
 struct SharedMemoryStatus
 {
 	int m_type;
-	
+
 	smUint64_t	m_timeStamp;
 	int	m_sequenceNumber;
-	
+
 	//m_streamBytes is only for internal purposes
 	int		m_numDataStreamBytes;
 	char*	m_dataStream;
 
-	//m_updateFlags is a bit fields to tell which parameters were updated, 
+	//m_updateFlags is a bit fields to tell which parameters were updated,
 	//m_updateFlags is ignored for most status messages
     int m_updateFlags;
 
@@ -1161,7 +1184,7 @@ struct SharedMemoryStatus
 		struct SendCollisionShapeDataArgs m_sendCollisionShapeArgs;
 		struct SyncUserDataArgs m_syncUserDataArgs;
 		struct UserDataResponseArgs m_userDataResponseArgs;
-		struct b3UserDataGlobalIdentifier m_removeUserDataResponseArgs;
+		struct UserDataRequestArgs m_removeUserDataResponseArgs;
 	};
 };
 

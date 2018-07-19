@@ -107,7 +107,6 @@ B3_SHARED_API int executePluginCommand_pdControlPlugin(struct b3PluginContext* c
 	if (arguments->m_numInts != 3)
 		return -1;
 
-	
 	switch (arguments->m_ints[0])
 	{
 	case	eSetPDControl:
@@ -122,7 +121,6 @@ B3_SHARED_API int executePluginCommand_pdControlPlugin(struct b3PluginContext* c
 		controller.m_maxForce = arguments->m_floats[4];
 		controller.m_objectUniqueId = arguments->m_ints[1];
 		controller.m_linkIndex = arguments->m_ints[2];
-
 		int foundIndex = -1;
 		for (int i = 0; i < obj->m_controllers.size(); i++)
 		{
