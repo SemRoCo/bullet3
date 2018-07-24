@@ -28,6 +28,8 @@ protected:
 
 	void processClothInfo(int bodyUniqueId, const SharedMemoryStatus& serverCmd);
     
+	void processAddUserData(const struct SharedMemoryStatus& serverCmd);
+
 	void postProcessStatus(const struct SharedMemoryStatus& serverCmd);
 
 	void resetData();
@@ -99,6 +101,8 @@ public:
     virtual void setSharedMemoryKey(int key);
 
     void uploadBulletFileToSharedMemory(const char* data, int len);
+    
+	virtual void uploadRaysToSharedMemory(struct SharedMemoryCommand& command, const double* rayFromWorldArray, const double* rayToWorldArray, int numRays);
 
     virtual int getNumDebugLines() const;
 
@@ -133,6 +137,14 @@ public:
 
 	virtual void setTimeOut(double timeOutInSeconds);
 	virtual double getTimeOut() const;
+
+	virtual bool getCachedUserData(int userDataId, struct b3UserDataValue &valueOut) const;
+	virtual int getCachedUserDataId(int bodyUniqueId, int linkIndex, int visualShapeIndex, const char *key) const;
+	virtual int getNumUserData(int bodyUniqueId) const;
+	virtual void getUserDataInfo(int bodyUniqueId, int userDataIndex, const char **keyOut, int *userDataIdOut, int *linkIndexOut, int *visualShapeIndexOut) const;
+	
+	virtual void pushProfileTiming(const char* timingName);
+	virtual void popProfileTiming();
 };
 
 #endif //PHYSICS_DIRECT_H

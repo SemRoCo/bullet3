@@ -113,6 +113,17 @@ B3_SHARED_API	int	b3ComputeDofCount(b3PhysicsClientHandle physClient, int bodyUn
 ///given a body and joint index, return the joint information. See b3JointInfo in SharedMemoryPublic.h
 B3_SHARED_API	int	b3GetJointInfo(b3PhysicsClientHandle physClient, int bodyUniqueId, int jointIndex, struct b3JointInfo* info);
 
+///user data handling
+B3_SHARED_API b3SharedMemoryCommandHandle b3InitSyncUserDataCommand(b3PhysicsClientHandle physClient);
+B3_SHARED_API b3SharedMemoryCommandHandle b3InitAddUserDataCommand(b3PhysicsClientHandle physClient, int bodyUniqueId, int linkIndex, int visualShapeIndex, const char* key, enum UserDataValueType valueType, int valueLength, const void *valueData);
+B3_SHARED_API b3SharedMemoryCommandHandle b3InitRemoveUserDataCommand(b3PhysicsClientHandle physClient, int userDataId);
+
+B3_SHARED_API int b3GetUserData(b3PhysicsClientHandle physClient, int userDataId, struct b3UserDataValue *valueOut);
+B3_SHARED_API int b3GetUserDataId(b3PhysicsClientHandle physClient, int bodyUniqueId, int linkIndex, int visualShapeIndex, const char *key);
+B3_SHARED_API int b3GetUserDataIdFromStatus(b3SharedMemoryStatusHandle statusHandle);
+B3_SHARED_API int b3GetNumUserData(b3PhysicsClientHandle physClient, int bodyUniqueId);
+B3_SHARED_API void b3GetUserDataInfo(b3PhysicsClientHandle physClient, int bodyUniqueId, int userDataIndex, const char **keyOut, int *userDataIdOut, int *linkIndexOut, int *visualShapeIndexOut);
+
 B3_SHARED_API	b3SharedMemoryCommandHandle b3GetDynamicsInfoCommandInit(b3PhysicsClientHandle physClient, int bodyUniqueId, int linkIndex);
 ///given a body unique id and link index, return the dynamics information. See b3DynamicsInfo in SharedMemoryPublic.h
 B3_SHARED_API	int b3GetDynamicsInfo(b3SharedMemoryStatusHandle statusHandle, struct b3DynamicsInfo* info);
@@ -131,6 +142,7 @@ B3_SHARED_API	int b3ChangeDynamicsInfoSetContactStiffnessAndDamping(b3SharedMemo
 B3_SHARED_API	int b3ChangeDynamicsInfoSetFrictionAnchor(b3SharedMemoryCommandHandle commandHandle,int bodyUniqueId,int linkIndex, int frictionAnchor);
 B3_SHARED_API	int b3ChangeDynamicsInfoSetCcdSweptSphereRadius(b3SharedMemoryCommandHandle commandHandle,int bodyUniqueId,int linkIndex, double ccdSweptSphereRadius);
 B3_SHARED_API	int b3ChangeDynamicsInfoSetContactProcessingThreshold(b3SharedMemoryCommandHandle commandHandle, int bodyUniqueId, int linkIndex, double contactProcessingThreshold);
+B3_SHARED_API	int b3ChangeDynamicsInfoSetActivationState(b3SharedMemoryCommandHandle commandHandle, int bodyUniqueId, int activationState);
 
 B3_SHARED_API	b3SharedMemoryCommandHandle b3InitCreateUserConstraintCommand(b3PhysicsClientHandle physClient, int parentBodyUniqueId, int parentJointIndex, int childBodyUniqueId, int childJointIndex, struct b3JointInfo* info);
 
@@ -306,6 +318,7 @@ B3_SHARED_API	int b3PhysicsParameterSetAllowedCcdPenetration(b3SharedMemoryComma
 B3_SHARED_API	int b3PhysicsParameterSetJointFeedbackMode(b3SharedMemoryCommandHandle commandHandle, int jointFeedbackMode);
 B3_SHARED_API	int b3PhysicsParamSetSolverResidualThreshold(b3SharedMemoryCommandHandle commandHandle, double solverResidualThreshold);
 B3_SHARED_API	int b3PhysicsParamSetContactSlop(b3SharedMemoryCommandHandle commandHandle, double contactSlop);
+B3_SHARED_API	int b3PhysicsParameterSetEnableSAT(b3SharedMemoryCommandHandle commandHandle, int enableSAT);
 
 
 
@@ -479,6 +492,8 @@ B3_SHARED_API	int b3CreateMultiBodyLink(b3SharedMemoryCommandHandle commandHandl
 
 //useMaximalCoordinates are disabled by default, enabling them is experimental and not fully supported yet
 B3_SHARED_API	void b3CreateMultiBodyUseMaximalCoordinates(b3SharedMemoryCommandHandle commandHandle);
+B3_SHARED_API	void b3CreateMultiBodySetFlags(b3SharedMemoryCommandHandle commandHandle, int flags);
+
 
 //int b3CreateMultiBodyAddLink(b3SharedMemoryCommandHandle commandHandle, int jointType, int parentLinkIndex, double linkMass, int linkCollisionShapeUnique, int linkVisualShapeUniqueId);
 
@@ -540,7 +555,12 @@ B3_SHARED_API	b3SharedMemoryCommandHandle b3CreateRaycastCommandInit(b3PhysicsCl
                                        double rayToWorldX, double rayToWorldY, double rayToWorldZ);
 
 B3_SHARED_API	b3SharedMemoryCommandHandle b3CreateRaycastBatchCommandInit(b3PhysicsClientHandle physClient);
-B3_SHARED_API	void b3RaycastBatchAddRay(b3SharedMemoryCommandHandle commandHandle, const double rayFromWorld[/*3*/], const double rayToWorld[/*3*/]);
+// Sets the number of threads to use to compute the ray intersections for the batch. Specify 0 to let Bullet decide, 1 (default) for single core execution, 2 or more to select the number of threads to use.
+B3_SHARED_API  void b3RaycastBatchSetNumThreads(b3SharedMemoryCommandHandle commandHandle, int numThreads);
+//max num rays for b3RaycastBatchAddRay is MAX_RAY_INTERSECTION_BATCH_SIZE
+B3_SHARED_API	void b3RaycastBatchAddRay(b3SharedMemoryCommandHandle commandHandle, const double rayFromWorld[3], const double rayToWorld[3]);
+//max num rays for b3RaycastBatchAddRays is MAX_RAY_INTERSECTION_BATCH_SIZE_STREAMING 
+B3_SHARED_API	void b3RaycastBatchAddRays(b3PhysicsClientHandle physClient, b3SharedMemoryCommandHandle commandHandle, const double* rayFromWorld, const double* rayToWorld, int numRays);
 
 B3_SHARED_API	void b3GetRaycastInformation(b3PhysicsClientHandle physClient, struct b3RaycastInformation* raycastInfo);
 
@@ -593,6 +613,9 @@ B3_SHARED_API	int b3StateLoggingStop(b3SharedMemoryCommandHandle commandHandle, 
 
 B3_SHARED_API	b3SharedMemoryCommandHandle	b3ProfileTimingCommandInit(b3PhysicsClientHandle physClient, const char* name);
 B3_SHARED_API	void b3SetProfileTimingDuractionInMicroSeconds(b3SharedMemoryCommandHandle commandHandle, int duration);
+
+B3_SHARED_API	void b3PushProfileTiming(b3PhysicsClientHandle physClient, const char* timingName);
+B3_SHARED_API	void b3PopProfileTiming(b3PhysicsClientHandle physClient);
 
 B3_SHARED_API	void b3SetTimeOut(b3PhysicsClientHandle physClient, double timeOutInSeconds);
 B3_SHARED_API	double b3GetTimeOut(b3PhysicsClientHandle physClient);
