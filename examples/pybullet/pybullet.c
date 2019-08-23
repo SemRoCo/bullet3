@@ -5291,6 +5291,152 @@ static PyObject* pybullet_rayTestBatch(PyObject* self, PyObject* args, PyObject*
 	return Py_None;
 }
 
+#ifdef PYBULLET_USE_NUMPY
+int CAN_USE_NUMPY_RAY_BATCH;
+
+static PyObject* pybullet_rayTestBatch_NUMPY(PyObject* self, PyObject* args, PyObject* keywds)
+{
+	if (!CAN_USE_NUMPY_RAY_BATCH) {
+		PyErr_SetString(PyExc_EnvironmentError, "Can not use the batch function right now. Is LD_PRELOAD set correctly? Try export LD_PRELOAD=\"/usr/lib/libtcmalloc_minimal.so.4\"");
+		return NULL;
+	}
+
+	b3SharedMemoryCommandHandle commandHandle;
+	b3SharedMemoryStatusHandle statusHandle;
+	int statusType;
+	PyArrayObject* rayFromObjList = 0;
+	PyArrayObject* rayToObjList = 0;
+	int numThreads = 1;
+	b3PhysicsClientHandle sm = 0;
+	int sizeFrom = 0;
+	int sizeTo = 0;
+
+
+	static char* kwlist[] = {"rayFromPositions", "rayToPositions", "numThreads", "physicsClientId", NULL};
+	int physicsClientId = 0;
+
+	if (!PyArg_ParseTupleAndKeywords(args, keywds, "O!O!|ii", kwlist,
+									 &PyArray_Type, &rayFromObjList, &PyArray_Type, &rayToObjList, &numThreads, &physicsClientId))
+		return NULL;
+
+	//printf("rayFromObjList: %d\nrayToObjList: %d\n", rayFromObjList, rayToObjList);
+	if (!rayFromObjList) {
+		PyErr_SetString(PyExc_TypeError, "rayFromPositions is not a numpy array");
+		return NULL;
+	}
+
+	if (!rayToObjList) {
+		PyErr_SetString(PyExc_TypeError, "rayToPositions is not a numpy array");
+		return NULL;
+	}
+
+	//printf("Checking types...");
+	if (!PyArray_ISFLOAT(rayFromObjList)) {
+		PyErr_SetString(PyExc_TypeError, "rayFromPositions is not an array of floats");
+		return NULL;
+	}
+
+	if (!PyArray_ISFLOAT(rayToObjList)) {
+		PyErr_SetString(PyExc_TypeError, "rayToPositions is not an array of floats");
+		return NULL;
+	}
+
+	//printf("Types checked out. Checking dimensionality... \nrayToObjList.ndim = %d\nrayToObjList.ndim = %d\n", PyArray_NDIM(rayFromObjList), PyArray_NDIM(rayToObjList));
+	if (PyArray_NDIM(rayFromObjList) != PyArray_NDIM(rayToObjList)) {
+		PyErr_SetString(PyExc_ValueError, "Arrays are not of the same dimension.");
+		return NULL;	
+	}
+
+	if (PyArray_NDIM(rayFromObjList) != 2) {
+		PyErr_SetString(PyExc_ValueError, "Arrays are not 2d.");
+		return NULL;			
+	}
+
+	//printf("Dimensionality checked out. Checking dimensions... \nrayToObjList.shape = (%d, %d)\nrayToObjList.shape = (%d, %d)\n", PyArray_DIM(rayFromObjList, 0), PyArray_DIM(rayFromObjList, 1), PyArray_DIM(rayToObjList, 0), PyArray_DIM(rayToObjList, 1));
+	if (PyArray_DIM(rayFromObjList, 1) < 3) {
+		PyErr_SetString(PyExc_ValueError, "Dimension 1 of rayFromPositions is less than 3 wide.");
+		return NULL;			
+	}
+
+	if (PyArray_DIM(rayToObjList, 1) < 3) {
+		PyErr_SetString(PyExc_ValueError, "Dimension 1 of rayToPositions is less than 3 wide.");
+		return NULL;			
+	}
+
+	if (PyArray_DIM(rayFromObjList, 0) != PyArray_DIM(rayToObjList, 0)) {
+		PyErr_SetString(PyExc_ValueError, "Dimension 0 of the arrays is not the same.");
+		return NULL;				
+	}
+			
+	if (PyArray_DIM(rayFromObjList, 0) > MAX_RAY_INTERSECTION_BATCH_SIZE_STREAMING) {
+		PyErr_SetString(SpamError, "Number of rays exceed the maximum batch size.");
+		return NULL;
+	}
+	
+	sm = getPhysicsClient(physicsClientId);
+	if (sm == 0) {
+		PyErr_SetString(SpamError, "Not connected to physics server.");
+		return NULL;
+	}
+	
+	commandHandle = b3CreateRaycastBatchCommandInit(sm);
+	b3RaycastBatchSetNumThreads(commandHandle, numThreads);
+
+	//printf("Copying rays to request...\n");
+	b3PushProfileTiming(sm, "extractPythonFromToSequenceToC");
+	for (int i = 0; i < PyArray_DIM(rayFromObjList, 0); i++) {
+		//todo: better to upload all rays at once
+		//b3RaycastBatchAddRay(commandHandle, rayFromWorld, rayToWorld);
+		b3RaycastBatchAddRays(sm, commandHandle, PyArray_GETPTR1(rayFromObjList, i), PyArray_GETPTR1(rayToObjList, i),1);	
+	}
+	b3PopProfileTiming(sm);
+	//printf("Copying done...\n");
+
+	statusHandle = b3SubmitClientCommandAndWaitStatus(sm, commandHandle);
+	statusType = b3GetStatusType(statusHandle);
+	if (statusType == CMD_REQUEST_RAY_CAST_INTERSECTIONS_COMPLETED) {
+		struct b3RaycastInformation raycastInfo;
+		b3PushProfileTiming(sm, "convertRaycastInformationToNumpy");
+		b3GetRaycastInformation(sm, &raycastInfo);
+
+		//printf("Processing results\n");		
+		npy_intp dimensions_idx[2] = {raycastInfo.m_numRayHits, 2};
+		npy_intp dimensions_hits[2] = {raycastInfo.m_numRayHits, 7};
+
+		PyObject*      returnTuple   = PyTuple_New(2);
+		PyObject*      rayHitIndices = PyArray_SimpleNew(2, dimensions_idx,  NPY_INT32);
+		PyObject*      rayHitsObj    = PyArray_SimpleNew(2, dimensions_hits, NPY_FLOAT64);
+		PyTuple_SetItem(returnTuple, 0, rayHitIndices);
+		PyTuple_SetItem(returnTuple, 1, rayHitsObj);
+
+		//printf("About to copy %d results from raycastInfo.\n", raycastInfo.m_numRayHits);
+		// printf("Hit Id  fraction  x     y    z\n");
+		for (int i = 0; i < raycastInfo.m_numRayHits; i++) {
+			memcpy(PyArray_GETPTR1(rayHitIndices, i), &(raycastInfo.m_rayHits[i].m_hitObjectUniqueId),
+				   2 * sizeof(int));
+			memcpy(PyArray_GETPTR1(rayHitsObj, i), &(raycastInfo.m_rayHits[i].m_hitFraction), sizeof(double));
+			memcpy(PyArray_GETPTR2(rayHitsObj, i, 1), &(raycastInfo.m_rayHits[i].m_hitPositionWorld), 6 * sizeof(double));
+			// printf("%d %f %f %f %f\n", 
+			// 		raycastInfo.m_rayHits[i].m_hitObjectUniqueId, 
+			// 		raycastInfo.m_rayHits[i].m_hitFraction, 
+			// 		raycastInfo.m_rayHits[i].m_hitPositionWorld[0],
+			// 		raycastInfo.m_rayHits[i].m_hitPositionWorld[1],
+			// 		raycastInfo.m_rayHits[i].m_hitPositionWorld[2]);
+
+		}
+		//printf("Copying done... Decreasing reference counter for new arrays\n");
+		// Py_DECREF(rayHitIndices);
+		// Py_DECREF(rayHitsObj);
+		// printf("Returning\n");
+		b3PopProfileTiming(sm);
+		return returnTuple;
+	}
+
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+#endif
+
 static PyObject* pybullet_getMatrixFromQuaternion(PyObject* self, PyObject* args, PyObject* keywds)
 {
 	PyObject* quatObj;
@@ -10006,6 +10152,10 @@ static PyMethodDef SpamMethods[] = {
 	 "Takes two required arguments (list of from_positions [x,y,z] and a list of to_positions [x,y,z] in Cartesian world coordinates) "
 	 "and one optional argument numThreads to specify the number of threads to use to compute the ray intersections for the batch. "
 	 "Specify 0 to let Bullet decide, 1 (default) for single core execution, 2 or more to select the number of threads to use."},
+#ifdef PYBULLET_USE_NUMPY
+	{"rayTestBatch_numpy", (PyCFunction)pybullet_rayTestBatch_NUMPY, METH_VARARGS | METH_KEYWORDS,
+		"Same as rayTestBatch, but returns the results as a numpy matrix with rows: objectId, link_index, hit_fraction, hit_x, hit_y, hit_z, normal_x, normal_y, normal_z"},
+#endif
 
 	 { "loadPlugin", (PyCFunction)pybullet_loadPlugin, METH_VARARGS | METH_KEYWORDS,
 		 "Load a plugin, could implement custom commands etc." },
@@ -10306,6 +10456,16 @@ initpybullet(void)
 #ifdef PYBULLET_USE_NUMPY
 	// Initialize numpy array.
 	import_array();
+	char* value_ld_preload  = 0;
+	CAN_USE_NUMPY_RAY_BATCH = 1;
+	value_ld_preload = getenv("LD_PRELOAD");
+	if (!value_ld_preload) {
+		printf("pybullet was compiled in NUMPY mode, however rayTestBatch_numpy is currently not available since LD_PRELOAD is not set. Try:\n  sudo apt-get install libtcmalloc-minimal4\n  export LD_PRELOAD=\"/usr/lib/libtcmalloc_minimal.so.4\"\nWhy this? Because it solved a memory problem. Solution stems from here: https://github.com/r9y9/gantts/issues/14");
+		CAN_USE_NUMPY_RAY_BATCH = 0;
+	}
+	PyModule_AddIntConstant(m, "CAN_USE_NUMPY_RAY_BATCH", CAN_USE_NUMPY_RAY_BATCH);
+#else
+	PyModule_AddIntConstant(m, "CAN_USE_NUMPY_RAY_BATCH", 0);
 #endif  //PYBULLET_USE_NUMPY
 
 #if PY_MAJOR_VERSION >= 3
