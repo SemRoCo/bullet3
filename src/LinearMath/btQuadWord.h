@@ -204,6 +204,8 @@ public:
 			m_floats[0] = _x, m_floats[1] = _y, m_floats[2] = _z, m_floats[3] = _w;
 		}
 
+        virtual ~btQuadWord() = default;
+
   /**@brief Set each element to the max of the current values and the values of another btQuadWord
    * @param other The other btQuadWord to compare with 
    */
