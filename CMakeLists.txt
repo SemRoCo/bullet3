@@ -20,6 +20,8 @@ IF (NOT CMAKE_BUILD_TYPE)
  SET(CMAKE_BUILD_TYPE "Release")
 ENDIF (NOT CMAKE_BUILD_TYPE)
 
+set (CMAKE_CXX_STANDARD 11)
+
 SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -D_DEBUG")
 #MESSAGE("CMAKE_CXX_FLAGS_DEBUG="+${CMAKE_CXX_FLAGS_DEBUG})
 
@@ -323,6 +325,7 @@ IF(BUILD_PYBULLET)
 	# python library should exactly match that of the interpreter
 	# the following can result in fatal error if you don't have the right python configuration
 	FIND_PACKAGE(PythonLibs ${PYTHON_VERSION_STRING} EXACT)
+	subdirs(better_python)
 ENDIF(BUILD_PYBULLET)
 
 OPTION(BUILD_ENET "Set when you want to build apps with enet UDP networking support" ON)
