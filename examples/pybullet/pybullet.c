@@ -10460,7 +10460,7 @@ initpybullet(void)
 	CAN_USE_NUMPY_RAY_BATCH = 1;
 	value_ld_preload = getenv("LD_PRELOAD");
 	if (!value_ld_preload) {
-		printf("pybullet was compiled in NUMPY mode, however rayTestBatch_numpy is currently not available since LD_PRELOAD is not set. Try:\n  sudo apt-get install libtcmalloc-minimal4\n  export LD_PRELOAD=\"/usr/lib/libtcmalloc_minimal.so.4\"\nWhy this? Because it solved a memory problem. Solution stems from here: https://github.com/r9y9/gantts/issues/14");
+		printf("pybullet was compiled in NUMPY mode, however rayTestBatch_numpy is currently not available since LD_PRELOAD is not set. Try:\n  sudo apt-get install libtcmalloc-minimal4\n  export LD_PRELOAD=\"/usr/lib/libtcmalloc_minimal.so.4\"\nWhy this? Because it solved a memory problem. Solution stems from here: https://github.com/r9y9/gantts/issues/14\n");
 		CAN_USE_NUMPY_RAY_BATCH = 0;
 	}
 	PyModule_AddIntConstant(m, "CAN_USE_NUMPY_RAY_BATCH", CAN_USE_NUMPY_RAY_BATCH);
