@@ -316,6 +316,17 @@ struct PairAccumulator : public btCollisionWorld::ContactResultCallback {
     const btCollisionObject* m_obj;
 };
 
+
+struct AABBBroadphaseCallback : public btBroadphaseAabbCallback {
+    virtual bool process(const btBroadphaseProxy* proxy) {
+        m_objects.push_back((btCollisionObject*)proxy->m_clientObject);
+        return true;
+    }
+
+    std::vector<btCollisionObject*> m_objects;
+};
+
+
 class KineverseWorld : public btCollisionWorld {
 private:
     btDbvtBroadphase         m_bpinterface;
@@ -416,6 +427,13 @@ public:
             out[kv.first] = get_closest(kv.first, kv.second);
         }
         return out;
+    }
+
+    
+    std::vector<btCollisionObject*> overlap_aabb(const btVector3& aabb_min, const btVector3& aabb_max) {
+        AABBBroadphaseCallback accumulator;
+        m_broadphasePairCache->aabbTest(aabb_min, aabb_max, accumulator);
+        return accumulator.m_objects;
     }
 
     void batch_set_transforms(std::vector<btCollisionObject*> objects, py::array_t<btScalar> poses) {
@@ -712,7 +730,12 @@ PYBIND11_MODULE(betterpybullet, m) {
         .def_property_readonly("merges_islands", &btCollisionObject::mergesSimulationIslands)
         .def_property_readonly("contact_stiffness", &btCollisionObject::getContactStiffness)
         .def_property_readonly("contact_damping",   &btCollisionObject::getContactDamping)
-        .def_property_readonly("anisotropic_friction", &btCollisionObject::getAnisotropicFriction);
+        .def_property_readonly("anisotropic_friction", &btCollisionObject::getAnisotropicFriction)
+        .def_property_readonly("aabb", [](btCollisionObject& self) {
+            btVector3 min, max;
+            self.getCollisionShape()->getAabb(self.getWorldTransform(), min, max);
+            return py::make_tuple(min, max);
+        });
 
     py::enum_<btCollisionObject::CollisionFlags>(collision_object, "CollisionFlags", py::arithmetic())
         .value("StaticObject",                  btCollisionObject::CollisionFlags::CF_STATIC_OBJECT)
@@ -762,7 +785,11 @@ PYBIND11_MODULE(betterpybullet, m) {
         .def("calculate_local_inertia", &btCollisionShape::calculateLocalInertia)
 #endif
         .def("get_contact_breaking_threshold", &btCollisionShape::getContactBreakingThreshold)
-        .def("get_aabb", &btCollisionShape::getAabb)
+        .def("get_aabb", [](btCollisionShape& self, const btTransform& t) {
+            btVector3 min, max;
+            self.getAabb(t, min, max);
+            return py::make_tuple(min, max);
+        }, py::arg("transform"))
         .def("get_bounding_sphere", &btCollisionShape::getBoundingSphere);
 
 
@@ -855,11 +882,12 @@ PYBIND11_MODULE(betterpybullet, m) {
     py::class_<KineverseWorld, btCollisionWorld>(m, "KineverseWorld")
         .def(py::init<>())
         .def("closest_ray_test", &KineverseWorld::closest_ray_test<btCollisionWorld::ClosestRayResultCallback>, py::arg("from"), py::arg("to"))
-        .def("closest_ray_test_batch", &KineverseWorld::closest_ray_test<btCollisionWorld::ClosestRayResultCallback>, py::arg("from"), py::arg("to"))
+        .def("closest_ray_test_batch", &KineverseWorld::closest_ray_batch_test<btCollisionWorld::ClosestRayResultCallback>, py::arg("from"), py::arg("to"))
         .def("get_closest", &KineverseWorld::get_closest, py::arg("object"), py::arg("max_distance"))
         .def("get_contacts", &KineverseWorld::get_contacts)
         .def("get_closest_batch", &KineverseWorld::get_closest_batch, "Performs a batched determination of closest object. Parameter maps objects to their max distances", py::arg("max_distances"))
-        .def("batch_set_transforms", &KineverseWorld::batch_set_transforms, py::arg("objects"), py::arg("transforms_matrix"));
+        .def("batch_set_transforms", &KineverseWorld::batch_set_transforms, py::arg("objects"), py::arg("transforms_matrix"))
+        .def("overlap_aabb", &KineverseWorld::overlap_aabb, py::arg("aabb_min"), py::arg("aabb_max"));
 
     py::class_<ContactPoint>(m, "ContactPoint")
         .def(py::init<const btVector3&, const btVector3&, const btVector3&, btScalar>())
