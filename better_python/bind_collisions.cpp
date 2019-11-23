@@ -289,6 +289,33 @@ struct ContactPair : public btCollisionWorld::ContactResultCallback {
     std::vector<ContactPoint> m_points;
 };
 
+struct ClosestPair : public ContactPair {
+    ClosestPair()
+    : ContactPair()
+    {}
+
+    ClosestPair(const btCollisionObject* obj_a,
+                const btCollisionObject* obj_b) 
+    : ContactPair(obj_a, obj_b) {}
+
+    virtual btScalar addSingleResult(btManifoldPoint& cp, 
+                        const btCollisionObjectWrapper* colObj0Wrap, int partId0, int index0,
+                        const btCollisionObjectWrapper* colObj1Wrap, int partId1, int index1)
+    {
+        if (m_points.size() == 0) {
+            return ContactPair::addSingleResult(cp, colObj0Wrap, partId0, index0, colObj1Wrap, partId1, index1);
+        } else if (cp.getDistance() < m_points[0].m_distance) {
+            m_points[0].m_pointOnA     = cp.m_localPointA; 
+            m_points[0].m_pointOnB     = cp.m_localPointB; 
+            m_points[0].m_normalWorldB = cp.m_normalWorldOnB; 
+            m_points[0].m_distance     = cp.getDistance();
+        }
+
+        return 1;
+    }
+};
+
+template <typename A>
 struct PairAccumulator : public btCollisionWorld::ContactResultCallback {
     PairAccumulator() : m_obj(0) {}
     PairAccumulator(const btCollisionObject* obj) : m_obj(obj) {}
@@ -299,8 +326,23 @@ struct PairAccumulator : public btCollisionWorld::ContactResultCallback {
                         const btCollisionObjectWrapper* colObj0Wrap, int partId0, int index0,
                         const btCollisionObjectWrapper* colObj1Wrap, int partId1, int index1)
     {
+        
+        if (m_obj != colObj0Wrap->m_collisionObject) {
+            if (m_obj == colObj1Wrap->m_collisionObject) {
+                auto buffer = colObj0Wrap;
+                colObj0Wrap = colObj1Wrap;
+                colObj1Wrap = buffer;
+                auto buffer_pointA = cp.m_localPointA;
+                cp.m_localPointA = cp.m_localPointB;
+                cp.m_localPointB = buffer_pointA;
+                cp.m_normalWorldOnB = -cp.m_normalWorldOnB;
+            } else {
+                return 0;
+            }
+        }
+
         if (m_obj_map.find(colObj1Wrap->m_collisionObject) == m_obj_map.end())
-            m_obj_map[colObj1Wrap->m_collisionObject] = ContactPair(m_obj, colObj1Wrap->m_collisionObject);
+            m_obj_map[colObj1Wrap->m_collisionObject] = A(m_obj, colObj1Wrap->m_collisionObject);
 
 
         m_obj_map[colObj1Wrap->m_collisionObject].addSingleResult(cp, colObj0Wrap, partId0, index0, colObj1Wrap, partId1, index1);
@@ -312,7 +354,7 @@ struct PairAccumulator : public btCollisionWorld::ContactResultCallback {
         return m_obj_map.size();
     }
 
-    std::unordered_map<const btCollisionObject*, ContactPair> m_obj_map;
+    std::unordered_map<const btCollisionObject*, A> m_obj_map;
     const btCollisionObject* m_obj;
 };
 
@@ -404,25 +446,27 @@ public:
         return out;   
     }
 
-    std::vector<ContactPair> get_closest(btCollisionObject* obj, btScalar max_distance=1.f) {
-        PairAccumulator pair(obj);
+    std::vector<ClosestPair> get_closest(btCollisionObject* obj, btScalar max_distance=1.f) {
+        PairAccumulator<ClosestPair> pair(obj);
         pair.m_closestDistanceThreshold = max_distance;
         for (int i = 0; i < m_collisionObjects.size(); i++) {
             btCollisionObject* other_object = m_collisionObjects[i];
             if (other_object != obj) {
+                //printf("obj: %x other_object: %x\n", obj, other_object);
                 contactPairTest(obj, other_object, pair);
             }
         }
 
-        std::vector<ContactPair> out(pair.size());
+        std::vector<ClosestPair> out;
+        out.reserve(pair.size());
         for (auto kv : pair.m_obj_map) {
             out.push_back(kv.second);
         }
         return out;
     }
 
-    std::unordered_map<btCollisionObject*, std::vector<ContactPair>> get_closest_batch(std::unordered_map<btCollisionObject*, btScalar> params) {
-        std::unordered_map<btCollisionObject*, std::vector<ContactPair>> out;
+    std::unordered_map<btCollisionObject*, std::vector<ClosestPair>> get_closest_batch(std::unordered_map<btCollisionObject*, btScalar> params) {
+        std::unordered_map<btCollisionObject*, std::vector<ClosestPair>> out;
         for (auto kv : params) {
             out[kv.first] = get_closest(kv.first, kv.second);
         }
@@ -901,6 +945,8 @@ PYBIND11_MODULE(betterpybullet, m) {
         .def_readonly("obj_a", &ContactPair::m_obj_a)
         .def_readonly("obj_b", &ContactPair::m_obj_b)
         .def_readonly("points", &ContactPair::m_points);
+
+    py::class_<ClosestPair, ContactPair>(m, "ClosestPair");
 
 //////// SHAPES
 
