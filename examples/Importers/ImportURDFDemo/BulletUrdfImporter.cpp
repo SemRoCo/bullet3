@@ -573,8 +573,8 @@ bool findExistingMeshFile(
 		std::string pkg_name = fn.substr(0, fn.find('/'));
 
 		std::string ros_pkg_path = getenv("ROS_PACKAGE_PATH");
-		size_t pos = 0;
-		while ((pos = ros_pkg_path.find(':')) != std::string::npos) {
+		while (true) {
+			size_t pos = ros_pkg_path.find(':');
 			std::string rpp = ros_pkg_path.substr(0, pos);
 			search_paths_str += rpp + '\n';
 
@@ -594,6 +594,8 @@ bool findExistingMeshFile(
 			}
 
 			ros_pkg_path.erase(0, pos + 1);
+			if (pos == std::string::npos)
+				break;
 		}
 
 		if (existing_file.empty()) {
