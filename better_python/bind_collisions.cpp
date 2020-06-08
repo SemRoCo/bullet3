@@ -701,7 +701,7 @@ PYBIND11_MODULE(betterpybullet, m) {
         .def_property_readonly("norm_sq", &btQuaternion::length2)
         .def_property_readonly("norm", &btQuaternion::length)
         .def("__repr__", (std::string (*)(const btQuaternion&)) &toString)
-        .def("__getitem__", [](const btVector3& v, int idx) {
+        .def("__getitem__", [](const btQuaternion& v, int idx) {
             switch(idx) {
                 case 0: return v.x();
                 case 1: return v.y();
