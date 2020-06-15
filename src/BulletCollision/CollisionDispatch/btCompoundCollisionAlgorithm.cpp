@@ -156,10 +156,12 @@ public:
 			btCollisionObjectWrapper compoundWrap(this->m_compoundColObjWrap,childShape,m_compoundColObjWrap->getCollisionObject(),newChildWorldTrans,-1,index);
 			
 			btCollisionAlgorithm* algo = 0;
+			bool algorithm_allocated   = false;
 
 			if (m_resultOut->m_closestPointDistanceThreshold > 0)
 			{
 				algo = m_dispatcher->findAlgorithm(&compoundWrap, m_otherObjWrap, 0, BT_CLOSEST_POINT_ALGORITHMS);
+				algorithm_allocated = true;
 			}
 			else
 			{
@@ -187,6 +189,10 @@ public:
 			}
 
 			algo->processCollision(&compoundWrap,m_otherObjWrap,m_dispatchInfo,m_resultOut);
+			if (algorithm_allocated) {
+				algo->~btCollisionAlgorithm();
+				m_dispatcher->freeCollisionAlgorithm(algo);
+			}
 
 #if 0
 			if (m_dispatchInfo.m_debugDraw && (m_dispatchInfo.m_debugDraw->getDebugMode() & btIDebugDraw::DBG_DrawAabb))
@@ -397,6 +403,3 @@ btScalar	btCompoundCollisionAlgorithm::calculateTimeOfImpact(btCollisionObject* 
 	return hitFraction;
 
 }
-
-
-
