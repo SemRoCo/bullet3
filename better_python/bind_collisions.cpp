@@ -49,6 +49,11 @@ PYBIND11_MODULE(betterpybullet, m) {
 
     m.def("load_convex_shape", &load_convex_shape, "Loads mesh file as a convex collision shape. Supported file types .obj, .stl, .dae.", py::arg("filename"), py::arg("use_cache") = true);
 
+    m.def("get_shape_filename", &get_shape_filename, "Returns the name of the mesh file for a given shape, "
+                                                     "if the shape is a mesh.", py::arg("shape"));
+
+// VECTORIZATION
+
     m.def("batch_set_transforms", &batch_set_transforms, "Sets the transforms of a list of matrix by extracting it from a stacked numpy matrix.", py::arg("objects"), py::arg("np_pose_matrix"));
 
 // MATH

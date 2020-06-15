@@ -3,6 +3,7 @@
 #include <btBulletCollisionCommon.h>
 
 #include "kineverse_mesh_loader.h"
+#include "kineverse_compound_shape.h"
 #include "kineverse_utils.h"
 
 std::shared_ptr<tinyobj::mesh_t> load_stl_mesh(const std::string& filename) {
@@ -80,14 +81,14 @@ std::shared_ptr<btCollisionShape> load_convex_shape(std::string filename, bool u
         if (shapes.size() == 1) {
             shape_ptr = m_flat_shape_cache[m_flat_shape_cache.size() - 1];
         } else {
-            std::shared_ptr<btCompoundShape> compound_ptr(new btCompoundShape());
+            auto compound_ptr = std::make_shared<KineverseCompoundShape>();
             for (int i = m_flat_shape_cache.size() - shapes.size(); i < m_flat_shape_cache.size(); i++)
-                compound_ptr->addChildShape(btTransform::getIdentity(), m_flat_shape_cache[i].get());
+                compound_ptr->addChildShape(btTransform::getIdentity(), m_flat_shape_cache[i]);
             shape_ptr = compound_ptr;
         }
     } else if (lc_filename.substr(lc_filename.size() - 4) == ".stl") {
         auto stl_mesh = load_stl_mesh(filename);
-        std::shared_ptr<btConvexHullShape> hull_ptr(new btConvexHullShape());
+        auto hull_ptr = std::make_shared<btConvexHullShape>();
         for (int i = 0; i < stl_mesh->positions.size(); i += 3) 
             hull_ptr->addPoint(btVector3(stl_mesh->positions[i], stl_mesh->positions[i + 1], stl_mesh->positions[i + 2]), i == stl_mesh->positions.size() - 3);
         hull_ptr->optimizeConvexHull();
