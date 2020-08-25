@@ -61,6 +61,8 @@ public:
 
     std::vector<ContactPair> get_contacts();
 
+    std::vector<ContactPoint> get_distance(CollisionObjectPtr obj_a, CollisionObjectPtr obj_b);
+
     std::vector<ClosestPair> get_closest(CollisionObjectPtr obj, btScalar max_distance=1.f);
 
     std::unordered_map<CollisionObjectPtr, std::vector<ClosestPair>> get_closest_batch(std::unordered_map<CollisionObjectPtr, btScalar> params);

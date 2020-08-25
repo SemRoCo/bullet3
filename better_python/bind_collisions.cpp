@@ -391,6 +391,7 @@ PYBIND11_MODULE(betterpybullet, m) {
         .def("closest_ray_test", &KineverseWorld::closest_ray_test<btCollisionWorld::ClosestRayResultCallback>, py::arg("from"), py::arg("to"))
         .def("closest_ray_test_batch", &KineverseWorld::closest_ray_batch_test<btCollisionWorld::ClosestRayResultCallback>, py::arg("from"), py::arg("to"))
         .def("get_closest", &KineverseWorld::get_closest, py::arg("object"), py::arg("max_distance"))
+        .def("get_distance", &KineverseWorld::get_distance, py::arg("object_a"), py::arg("object_b"))
         .def("get_contacts", &KineverseWorld::get_contacts)
         .def("get_closest_batch", &KineverseWorld::get_closest_batch, "Performs a batched determination of closest object. Parameter maps objects to their max distances", py::arg("max_distances"))
         .def("overlap_aabb", &KineverseWorld::overlap_aabb, py::arg("aabb_min"), py::arg("aabb_max"))

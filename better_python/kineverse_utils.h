@@ -34,3 +34,14 @@ std::vector<T> aligned_array_to_stl(const btAlignedObjectArray<T>& array) {
 inline btTransform create_translation(btScalar x, btScalar y, btScalar z) {
     return btTransform(btQuaternion::getIdentity(), btVector3(x,y,z));
 }
+
+btScalar minAabbDistanceSq(const btVector3& minAabb_a, const btVector3& maxAabb_a,
+                           const btVector3& minAabb_b, const btVector3& maxAabb_b);
+
+inline btScalar minAabbDistance(const btVector3& minAabb_a, const btVector3& maxAabb_a,
+                                const btVector3& minAabb_b, const btVector3& maxAabb_b) {
+    return sqrt(minAabbDistanceSq(minAabb_a,
+                                  maxAabb_a,
+                                  minAabb_b,
+                                  maxAabb_b));
+}

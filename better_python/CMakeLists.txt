@@ -9,6 +9,7 @@ IF(BUILD_PYBULLET)
                 kineverse_world.cpp
                 kineverse_collision_object.cpp
                 kineverse_compound_shape.cpp
+                kineverse_bvh_triangle_mesh.cpp
                 ../examples/ThirdPartyLibs/Wavefront/tiny_obj_loader.cpp
                 ../examples/Utils/b3ResourcePath.cpp)
     target_link_libraries(kineverse BulletCollision BulletDynamics Bullet3Common LinearMath)

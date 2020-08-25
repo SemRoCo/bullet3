@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <iostream>
 
 #include "kineverse_world.h"
@@ -82,9 +83,21 @@ std::vector<ContactPair> KineverseWorld::get_contacts() {
     return out;   
 }
 
+std::vector<ContactPoint> KineverseWorld::get_distance(CollisionObjectPtr obj_a, 
+                                                       CollisionObjectPtr obj_b) {
+    if (obj_a != obj_b) {
+        ContactPair pair(obj_a, obj_b);
+        contactPairTest(obj_a.get(), obj_b.get(), pair);
+        std::sort(pair.m_points.begin(), pair.m_points.end());
+        return pair.m_points;
+    }
+    return {};
+}
+
 std::vector<ClosestPair> KineverseWorld::get_closest(CollisionObjectPtr obj, btScalar max_distance) {
     PairAccumulator<ClosestPair> pair(std::const_pointer_cast<const KineverseCollisionObject>(obj), m_collision_object_ptr_map);
     pair.m_closestDistanceThreshold = max_distance;
+    btScalar sq_distance = max_distance * max_distance;
     for (auto other_ptr: m_collision_object_set) {
         if (other_ptr != obj) {
             //printf("obj: %x other_ptr: %x\n", obj, other_ptr);

@@ -472,9 +472,9 @@ int main(int argc, char const *argv[]) {
 
     for (int i = 0; i < 1; i++) {
         auto closest_pairs = world.get_closest_batch(qbatch);
-        // for (const auto& pair: closest_pairs)
-        //     for (const auto& cp: pair.second)
-        //         std::cout << cp << std::endl;
+        for (const auto& pair: closest_pairs)
+            for (const auto& cp: pair.second)
+                std::cout << cp << std::endl;
     }
 
     std::cout << "Done with distance checks." << std::endl;

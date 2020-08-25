@@ -25,6 +25,10 @@ struct ContactPoint {
     btVector3 m_pointOnB;
     btVector3 m_normalWorldB;
     btScalar m_distance;
+
+    inline bool operator< (const ContactPoint& other) {
+        return m_distance < other.m_distance;
+    }
 };
 
 struct ContactPair : public btCollisionWorld::ContactResultCallback {
