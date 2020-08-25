@@ -1371,11 +1371,15 @@ static PyObject* pybullet_changeDynamicsInfo(PyObject* self, PyObject* args, PyO
 	PyObject* anisotropicFrictionObj = 0;
 	double maxJointVelocity = -1;
 	
+	double jointLowerLimit = 1;
+	double jointUpperLimit = -1;
+	double jointLimitForce = -1;
+
 	b3PhysicsClientHandle sm = 0;
 
 	int physicsClientId = 0;
-	static char* kwlist[] = {"bodyUniqueId", "linkIndex", "mass", "lateralFriction", "spinningFriction", "rollingFriction", "restitution", "linearDamping", "angularDamping", "contactStiffness", "contactDamping", "frictionAnchor", "localInertiaDiagonal", "ccdSweptSphereRadius", "contactProcessingThreshold", "activationState", "jointDamping", "anisotropicFriction", "maxJointVelocity",  "collisionMargin", "physicsClientId", NULL};
-	if (!PyArg_ParseTupleAndKeywords(args, keywds, "ii|dddddddddiOddidOddi", kwlist, &bodyUniqueId, &linkIndex, &mass, &lateralFriction, &spinningFriction, &rollingFriction, &restitution, &linearDamping, &angularDamping, &contactStiffness, &contactDamping, &frictionAnchor, &localInertiaDiagonalObj, &ccdSweptSphereRadius, &contactProcessingThreshold, &activationState, &jointDamping, &anisotropicFrictionObj, &maxJointVelocity, &collisionMargin , &physicsClientId))
+	static char* kwlist[] = {"bodyUniqueId", "linkIndex", "mass", "lateralFriction", "spinningFriction", "rollingFriction", "restitution", "linearDamping", "angularDamping", "contactStiffness", "contactDamping", "frictionAnchor", "localInertiaDiagonal", "ccdSweptSphereRadius", "contactProcessingThreshold", "activationState", "jointDamping", "anisotropicFriction", "maxJointVelocity",  "collisionMargin", "jointLowerLimit","jointUpperLimit", "jointLimitForce",  "physicsClientId", NULL};
+	if (!PyArg_ParseTupleAndKeywords(args, keywds, "ii|dddddddddiOddidOdddddi", kwlist, &bodyUniqueId, &linkIndex, &mass, &lateralFriction, &spinningFriction, &rollingFriction, &restitution, &linearDamping, &angularDamping, &contactStiffness, &contactDamping, &frictionAnchor, &localInertiaDiagonalObj, &ccdSweptSphereRadius, &contactProcessingThreshold, &activationState, &jointDamping, &anisotropicFrictionObj, &maxJointVelocity, &collisionMargin , &jointLowerLimit , &jointUpperLimit , &jointLimitForce , &physicsClientId))
 	{
 		return NULL;
 	}
@@ -1396,6 +1400,16 @@ static PyObject* pybullet_changeDynamicsInfo(PyObject* self, PyObject* args, PyO
 	{
 		b3SharedMemoryCommandHandle command = b3InitChangeDynamicsInfo(sm);
 		b3SharedMemoryStatusHandle statusHandle;
+
+		if (jointLimitForce >= 0)
+		{
+			b3ChangeDynamicsInfoSetJointLimitForce(command, bodyUniqueId, linkIndex, jointLimitForce);
+		}
+
+		if (jointLowerLimit <= jointUpperLimit)
+		{
+			b3ChangeDynamicsInfoSetJointLimit(command, bodyUniqueId, linkIndex, jointLowerLimit, jointUpperLimit);
+		}
 
 		if (mass >= 0)
 		{
@@ -6562,10 +6576,8 @@ static PyObject* pybullet_rayTestObsolete(PyObject* self, PyObject* args, PyObje
 											   to[0], to[1], to[2]);
 
 
-	if (collisionFilterMask >= 0)
-	{
-		b3RaycastBatchSetCollisionFilterMask(commandHandle, collisionFilterMask);
-	}
+	b3RaycastBatchSetCollisionFilterMask(commandHandle, collisionFilterMask);
+	
 	if (reportHitNumber >= 0)
 	{
 		b3RaycastBatchSetReportHitNumber(commandHandle, reportHitNumber);
@@ -6655,11 +6667,44 @@ static PyObject* pybullet_rayTestBatch(PyObject* self, PyObject* args, PyObject*
 		return NULL;
 	}
 
+	if (!rayFromObjList || !rayToObjList)
+	{
+		PyErr_SetString(SpamError, "rayFromPositions and rayToPositions must be not None.");
+		return NULL;
+	}
+
 	commandHandle = b3CreateRaycastBatchCommandInit(sm);
 	b3RaycastBatchSetNumThreads(commandHandle, numThreads);
 
-	if (rayFromObjList)
+
+	int raysAdded = 0;
+#ifdef PYBULLET_USE_NUMPY
+	// Faster approach if both inputs can be converted into ndarray.
+	if (PyArray_Check(rayFromObjList) && PyArray_Check(rayToObjList)) {
+		b3PushProfileTiming(sm, "extractPythonFromToNumpy");
+		PyArrayObject* rayFromPyArrayObj = (PyArrayObject*)PyArray_FROMANY(rayFromObjList, NPY_DOUBLE, 1, 2, NPY_ARRAY_CARRAY_RO);
+		PyArrayObject* rayToPyArrayObj = (PyArrayObject*)PyArray_FROMANY(rayToObjList, NPY_DOUBLE, 1, 2, NPY_ARRAY_CARRAY_RO);
+
+		// If there is error, this will fall back to default method and error messages will be reported there.
+		if (rayFromPyArrayObj && rayToPyArrayObj
+			&& PyArray_SAMESHAPE(rayFromPyArrayObj, rayToPyArrayObj)
+			&& PyArray_DIMS(rayFromPyArrayObj)[PyArray_NDIM(rayFromPyArrayObj) - 1] == 3)
+		{
+			int len = (PyArray_NDIM(rayFromPyArrayObj) == 2) ? PyArray_DIMS(rayFromPyArrayObj)[0] : 1;
+			if (len <= MAX_RAY_INTERSECTION_BATCH_SIZE_STREAMING)
+			{
+				b3RaycastBatchAddRays(sm, commandHandle, PyArray_DATA(rayFromPyArrayObj), PyArray_DATA(rayToPyArrayObj), len);
+				raysAdded = 1;
+			}
+		}
+		if (rayFromPyArrayObj) Py_DECREF(rayFromPyArrayObj);
+		if (rayToPyArrayObj) Py_DECREF(rayToPyArrayObj);
+		b3PopProfileTiming(sm);
+	}
+#endif
+	if (!raysAdded)
 	{
+		// go back to default method.
 		PyObject* seqRayFromObj = PySequence_Fast(rayFromObjList, "expected a sequence of rayFrom positions");
 		PyObject* seqRayToObj = PySequence_Fast(rayToObjList, "expected a sequence of 'rayTo' positions");
 
@@ -6737,10 +6782,8 @@ static PyObject* pybullet_rayTestBatch(PyObject* self, PyObject* args, PyObject*
 	{
 		b3RaycastBatchSetReportHitNumber(commandHandle, reportHitNumber);
 	}
-	if (collisionFilterMask >= 0)
-	{
-		b3RaycastBatchSetCollisionFilterMask(commandHandle, collisionFilterMask);
-	}
+	b3RaycastBatchSetCollisionFilterMask(commandHandle, collisionFilterMask);
+
 	if (fractionEpsilon >= 0)
 	{
 		b3RaycastBatchSetFractionEpsilon(commandHandle, fractionEpsilon);
@@ -8010,7 +8053,7 @@ static PyObject* pybullet_getClosestPointData(PyObject* self, PyObject* args, Py
 									 &bodyUniqueIdA, &bodyUniqueIdB, &distanceThreshold, &linkIndexA, &linkIndexB,
 									 &collisionShapeA, &collisionShapeB,
 									 &collisionShapePositionAObj, &collisionShapePositionBObj,
-									 &collisionShapeOrientationA, &collisionShapeOrientationBObj,
+									 &collisionShapeOrientationAObj, &collisionShapeOrientationBObj,
 									 &physicsClientId))
 		return NULL;
 
@@ -11915,8 +11958,8 @@ static PyObject* pybullet_calculateJacobian(PyObject* self, PyObject* args, PyOb
 						if (dofCount)
 						{
 							int byteSizeDofCount = sizeof(double) * dofCount;
-							double* linearJacobian = (double*)malloc(3 * byteSizeDofCount);
-							double* angularJacobian = (double*)malloc(3 * byteSizeDofCount);
+							linearJacobian = (double*)malloc(3 * byteSizeDofCount);
+							angularJacobian = (double*)malloc(3 * byteSizeDofCount);
 							b3GetStatusJacobian(statusHandle,
 												NULL,
 												linearJacobian,

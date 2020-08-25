@@ -167,6 +167,8 @@ enum EnumChangeDynamicsInfoFlags
 	CHANGE_DYNAMICS_INFO_SET_ANISOTROPIC_FRICTION = 32768,
 	CHANGE_DYNAMICS_INFO_SET_MAX_JOINT_VELOCITY = 1<<16,	
 	CHANGE_DYNAMICS_INFO_SET_COLLISION_MARGIN = 1 << 17,
+	CHANGE_DYNAMICS_INFO_SET_JOINT_LIMITS = 1 << 18,
+	CHANGE_DYNAMICS_INFO_SET_JOINT_LIMIT_MAX_FORCE = 1 << 19,
 };
 
 struct ChangeDynamicsInfoArgs
@@ -192,6 +194,10 @@ struct ChangeDynamicsInfoArgs
 	double m_anisotropicFriction[3];
 	double m_maxJointVelocity;
 	double m_collisionMargin;
+	
+	double m_jointLowerLimit;
+	double m_jointUpperLimit;
+	double m_jointLimitForce;
 };
 
 struct GetDynamicsInfoArgs
@@ -783,7 +789,7 @@ struct CalculateInverseKinematicsArgs
 	//	double m_jointPositionsQ[MAX_DEGREE_OF_FREEDOM];
 	double m_targetPositions[MAX_DEGREE_OF_FREEDOM*3];
 	int m_numEndEffectorLinkIndices;
-	double m_targetOrientation[4];  //orientation represented as quaternion, x,y,z,w
+	double m_targetOrientation[MAX_DEGREE_OF_FREEDOM*4];  //orientation represented as quaternion, x,y,z,w
 	int m_endEffectorLinkIndices[MAX_DEGREE_OF_FREEDOM];
 	double m_lowerLimit[MAX_DEGREE_OF_FREEDOM];
 	double m_upperLimit[MAX_DEGREE_OF_FREEDOM];
