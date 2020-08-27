@@ -63,7 +63,7 @@ std::unordered_map<std::string, std::shared_ptr<btCollisionShape>> m_convex_shap
 std::unordered_map<std::string, std::shared_ptr<btCollisionShape>> m_trimesh_shape_cache;
 std::unordered_map<const btCollisionShape*, std::string> collision_shape_filenames;
 
-std::shared_ptr<btCollisionShape> load_convex_shape(std::string filename, bool use_cache) {
+std::shared_ptr<btCollisionShape> load_convex_shape(std::string filename, bool use_cache, btScalar shape_margin) {
     if (use_cache && m_convex_shape_cache.find(filename) != m_convex_shape_cache.end())
         return m_convex_shape_cache[filename];
 
@@ -80,6 +80,8 @@ std::shared_ptr<btCollisionShape> load_convex_shape(std::string filename, bool u
         
         for (const auto& shape : shapes) {
             auto new_shape = std::make_shared<btConvexHullShape>();
+            new_shape->setMargin(shape_margin);
+            
             std::unordered_set<int> used_indices;
 
             for (int i = 0; i < shape.mesh.indices.size(); i++) {
@@ -107,6 +109,8 @@ std::shared_ptr<btCollisionShape> load_convex_shape(std::string filename, bool u
     } else if (lc_filename.substr(lc_filename.size() - 4) == ".stl") {
         auto attrib = load_stl_mesh(filename);
         auto hull_ptr = std::make_shared<btConvexHullShape>();
+        hull_ptr->setMargin(shape_margin);
+
         for (int i = 0; i < attrib.vertices.size(); i += 3) 
             hull_ptr->addPoint(btVector3(attrib.vertices[i + 0], 
                                          attrib.vertices[i + 1], 

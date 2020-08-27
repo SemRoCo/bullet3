@@ -17,6 +17,7 @@
 #include "kineverse_utils.h"
 #include "kineverse_compound_shape.h"
 #include "kineverse_mesh_loader.h"
+#include "kineverse_settings.h"
 
 namespace py = pybind11;
 
@@ -43,11 +44,13 @@ using ShapePtr = std::shared_ptr<btCollisionShape>;
 
 PYBIND11_MODULE(betterpybullet, m) {
     m.doc() = "Attempt at exposing bullet's collision functionality.";
-
+    m.def("get_version", []() {
+        return string_format("Better PyBullet. Built: %s %s", __DATE__, __TIME__);
+    });
 
 // MESH LOADING
 
-    m.def("load_convex_shape", &load_convex_shape, "Loads mesh file as a convex collision shape. Supported file types .obj, .stl, .dae.", py::arg("filename"), py::arg("use_cache") = true);
+    m.def("load_convex_shape", &load_convex_shape, "Loads mesh file as a convex collision shape. Supported file types .obj, .stl, .dae.", py::arg("filename"), py::arg("use_cache") = true, py::arg("shape_margin") = 0.001);
 
     m.def("get_shape_filename", &get_shape_filename, "Returns the name of the mesh file for a given shape, "
                                                      "if the shape is a mesh.", py::arg("shape"));

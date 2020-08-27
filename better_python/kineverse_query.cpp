@@ -14,7 +14,10 @@ bool ContactPair::needsCollision(btBroadphaseProxy* proxy0) const {
 btScalar ContactPair::addSingleResult(btManifoldPoint& cp, 
                                       const btCollisionObjectWrapper* colObj0Wrap, int partId0, int index0,
                                       const btCollisionObjectWrapper* colObj1Wrap, int partId1, int index1) {
-    m_points.push_back(ContactPoint(cp.m_localPointA, cp.m_localPointB, cp.m_normalWorldOnB, cp.getDistance()));
+    m_points.push_back(ContactPoint(cp.m_localPointA,
+                                    cp.m_localPointB,
+                                    cp.m_normalWorldOnB, 
+                                    cp.getDistance()));
 
     return 1;
 }
@@ -33,8 +36,8 @@ btScalar ClosestPair::addSingleResult(btManifoldPoint& cp,
     if (m_points.size() == 0) {
         return ContactPair::addSingleResult(cp, colObj0Wrap, partId0, index0, colObj1Wrap, partId1, index1);
     } else if (cp.getDistance() < m_points[0].m_distance) {
-        m_points[0].m_pointOnA     = cp.m_localPointA; 
-        m_points[0].m_pointOnB     = cp.m_localPointB; 
+        m_points[0].m_pointOnA     = cp.m_localPointA;
+        m_points[0].m_pointOnB     = cp.m_localPointB;
         m_points[0].m_normalWorldB = cp.m_normalWorldOnB; 
         m_points[0].m_distance     = cp.getDistance();
     }
