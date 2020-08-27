@@ -77,7 +77,7 @@ std::shared_ptr<btCollisionShape> load_convex_shape(std::string filename, bool u
         tinyobj::attrib_t attrib;
         std::vector<tinyobj::shape_t> shapes;
         std::string error_msg = tinyobj::LoadObj(attrib, shapes, filename.c_str(), 0, &file_io);
-        
+
         for (const auto& shape : shapes) {
             auto new_shape = std::make_shared<btConvexHullShape>();
             new_shape->setMargin(shape_margin);
@@ -86,9 +86,9 @@ std::shared_ptr<btCollisionShape> load_convex_shape(std::string filename, bool u
 
             for (int i = 0; i < shape.mesh.indices.size(); i++) {
                 if (used_indices.find(shape.mesh.indices[i].vertex_index) == used_indices.end()) {
-                    new_shape->addPoint(btVector3(attrib.vertices[shape.mesh.indices[i].vertex_index + 0], 
-                                                  attrib.vertices[shape.mesh.indices[i].vertex_index + 1], 
-                                                  attrib.vertices[shape.mesh.indices[i].vertex_index + 2]));
+                    new_shape->addPoint(btVector3(attrib.vertices[shape.mesh.indices[i].vertex_index * 3 + 0], 
+                                                  attrib.vertices[shape.mesh.indices[i].vertex_index * 3 + 1], 
+                                                  attrib.vertices[shape.mesh.indices[i].vertex_index * 3 + 2]));
                 }
                 used_indices.insert(shape.mesh.indices[i].vertex_index);
             }

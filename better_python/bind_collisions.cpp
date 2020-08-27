@@ -510,6 +510,24 @@ PYBIND11_MODULE(betterpybullet, m) {
         .def("add_point", &btConvexHullShape::addPoint)
         .def("optimize_hull", &btConvexHullShape::optimizeConvexHull)
         .def_property_readonly("npoints", &btConvexHullShape::getNumPoints)
+        .def_property_readonly("points", [](const btConvexHullShape& shape) {
+            std::vector<btVector3> out;
+            out.resize(shape.getNumVertices());
+
+            for (int i = 0; i < shape.getNumVertices(); i++)
+                shape.getVertex(i, out[i]);
+
+            return out;
+        })
+        .def_property_readonly("edges", [](const btConvexHullShape& shape) {
+            std::vector<btVector3> out;
+            out.resize(shape.getNumEdges() * 2);
+
+            for (int i = 0; i < shape.getNumEdges(); i++)
+                shape.getEdge(i, out[i * 2], out[i * 2 + 1]);
+
+            return out;
+        })
         .def_property_readonly("file_path", [](btCollisionShape* shape) {
             return get_shape_filename(shape);
         });
