@@ -397,6 +397,7 @@ PYBIND11_MODULE(betterpybullet, m) {
         .def("get_distance", &KineverseWorld::get_distance, py::arg("object_a"), py::arg("object_b"))
         .def("get_contacts", &KineverseWorld::get_contacts)
         .def("get_closest_batch", &KineverseWorld::get_closest_batch, "Performs a batched determination of closest object. Parameter maps objects to their max distances", py::arg("max_distances"))
+        .def("get_closest_filtered", &KineverseWorld::get_closest_filtered, "Performs a distance check of the first given object against a list of other objects.", py::arg("obj_a"), py::arg("objects"), py::arg("max_distance"))
         .def("overlap_aabb", &KineverseWorld::overlap_aabb, py::arg("aabb_min"), py::arg("aabb_max"))
         .def("update_single_aabb", &btCollisionWorld::updateSingleAabb)
         .def("update_aabbs", &btCollisionWorld::updateAabbs)

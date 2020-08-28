@@ -121,6 +121,21 @@ std::unordered_map<CollisionObjectPtr, std::vector<ClosestPair>> KineverseWorld:
     return out;
 }
 
+std::vector<ClosestPair> KineverseWorld::get_closest_filtered(CollisionObjectPtr obj, const std::vector<CollisionObjectPtr>& other_objects, btScalar max_distance) {
+    PairAccumulator<ClosestPair> pair(std::const_pointer_cast<const KineverseCollisionObject>(obj), m_collision_object_ptr_map);
+    pair.m_closestDistanceThreshold = max_distance;
+
+    for (auto other_ptr: other_objects) {
+        contactPairTest(obj.get(), other_ptr.get(), pair);
+    }
+
+    std::vector<ClosestPair> out;
+    out.reserve(pair.size());
+    for (auto kv : pair.m_obj_map) {
+        out.push_back(kv.second);
+    }
+    return out;   
+}
 
 std::vector<CollisionObjectPtr> KineverseWorld::overlap_aabb(const btVector3& aabb_min, const btVector3& aabb_max) {
     AABBBroadphaseCallback accumulator(m_collision_object_ptr_map);

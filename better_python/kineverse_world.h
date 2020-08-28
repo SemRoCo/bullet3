@@ -65,6 +65,8 @@ public:
 
     std::vector<ClosestPair> get_closest(CollisionObjectPtr obj, btScalar max_distance=1.f);
 
+    std::vector<ClosestPair> get_closest_filtered(CollisionObjectPtr obj, const std::vector<CollisionObjectPtr>& other_objects, btScalar max_distance = 1.0);
+
     std::unordered_map<CollisionObjectPtr, std::vector<ClosestPair>> get_closest_batch(std::unordered_map<CollisionObjectPtr, btScalar> params);
     
     std::vector<CollisionObjectPtr> overlap_aabb(const btVector3& aabb_min, const btVector3& aabb_max);
