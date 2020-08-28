@@ -84,9 +84,10 @@ std::vector<ContactPair> KineverseWorld::get_contacts() {
 }
 
 std::vector<ContactPoint> KineverseWorld::get_distance(CollisionObjectPtr obj_a, 
-                                                       CollisionObjectPtr obj_b) {
+                                                       CollisionObjectPtr obj_b, btScalar max_distance) {
     if (obj_a != obj_b) {
         ContactPair pair(obj_a, obj_b);
+        pair.m_closestDistanceThreshold = max_distance;
         contactPairTest(obj_a.get(), obj_b.get(), pair);
         std::sort(pair.m_points.begin(), pair.m_points.end());
         return pair.m_points;
