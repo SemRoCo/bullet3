@@ -135,7 +135,40 @@ std::vector<ClosestPair> KineverseWorld::get_closest_filtered(CollisionObjectPtr
     for (auto kv : pair.m_obj_map) {
         out.push_back(kv.second);
     }
+    return out;
+}
+
+std::unordered_map<CollisionObjectPtr, std::vector<ClosestPair>> KineverseWorld::get_closest_filtered_batch(const std::unordered_map<CollisionObjectPtr, std::pair<std::vector<CollisionObjectPtr>, btScalar>>& query) {
+    std::unordered_map<CollisionObjectPtr, std::vector<ClosestPair>> out;
+    for (auto kv : query) {
+        out[kv.first] = get_closest_filtered(kv.first, kv.second.first, kv.second.second);
+    }
     return out;   
+}
+
+std::vector<ClosestPair> KineverseWorld::get_closest_filtered_POD(CollisionObjectPtr obj, const std::vector<std::pair<CollisionObjectPtr, btScalar>>& other_objects) {
+
+    PairAccumulator<ClosestPair> pair(std::const_pointer_cast<const KineverseCollisionObject>(obj), m_collision_object_ptr_map);
+
+    for (auto query_pair: other_objects) {
+        pair.m_closestDistanceThreshold = query_pair.second;
+        contactPairTest(obj.get(), query_pair.first.get(), pair);
+    }
+
+    std::vector<ClosestPair> out;
+    out.reserve(pair.size());
+    for (auto kv : pair.m_obj_map) {
+        out.push_back(kv.second);
+    }
+    return out;
+}
+
+std::unordered_map<CollisionObjectPtr, std::vector<ClosestPair>> KineverseWorld::get_closest_filtered_POD_batch(const std::unordered_map<CollisionObjectPtr, std::vector<std::pair<CollisionObjectPtr, btScalar>>>& query) {
+    std::unordered_map<CollisionObjectPtr, std::vector<ClosestPair>> out;
+    for (auto kv : query) {
+        out[kv.first] = get_closest_filtered_POD(kv.first, kv.second);
+    }
+    return out;      
 }
 
 std::vector<CollisionObjectPtr> KineverseWorld::overlap_aabb(const btVector3& aabb_min, const btVector3& aabb_max) {

@@ -11,7 +11,9 @@ IF(BUILD_PYBULLET)
                 kineverse_compound_shape.cpp
                 kineverse_bvh_triangle_mesh.cpp
                 ../examples/ThirdPartyLibs/Wavefront/tiny_obj_loader.cpp
-                ../examples/Utils/b3ResourcePath.cpp)
+                ../examples/ThirdPartyLibs/tinyxml2/tinyxml2.cpp
+                ../examples/Utils/b3ResourcePath.cpp
+                ../examples/Importers/ImportColladaDemo/LoadMeshFromCollada.cpp)
     target_link_libraries(kineverse BulletCollision BulletDynamics Bullet3Common LinearMath)
 
     add_executable(kineverse_test kineverse_test.cpp)

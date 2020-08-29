@@ -65,10 +65,16 @@ public:
 
     std::vector<ClosestPair> get_closest(CollisionObjectPtr obj, btScalar max_distance=1.f);
 
+    std::unordered_map<CollisionObjectPtr, std::vector<ClosestPair>> get_closest_batch(std::unordered_map<CollisionObjectPtr, btScalar> params);
+
     std::vector<ClosestPair> get_closest_filtered(CollisionObjectPtr obj, const std::vector<CollisionObjectPtr>& other_objects, btScalar max_distance = 1.0);
 
-    std::unordered_map<CollisionObjectPtr, std::vector<ClosestPair>> get_closest_batch(std::unordered_map<CollisionObjectPtr, btScalar> params);
+    std::unordered_map<CollisionObjectPtr, std::vector<ClosestPair>> get_closest_filtered_batch(const std::unordered_map<CollisionObjectPtr, std::pair<std::vector<CollisionObjectPtr>, btScalar>>& query);
     
+    std::vector<ClosestPair> get_closest_filtered_POD(CollisionObjectPtr obj, const std::vector<std::pair<CollisionObjectPtr, btScalar>>& other_objects);
+
+    std::unordered_map<CollisionObjectPtr, std::vector<ClosestPair>> get_closest_filtered_POD_batch(const std::unordered_map<CollisionObjectPtr, std::vector<std::pair<CollisionObjectPtr, btScalar>>>& query);
+
     std::vector<CollisionObjectPtr> overlap_aabb(const btVector3& aabb_min, const btVector3& aabb_max);
 
     inline std::vector<CollisionObjectPtr> get_collision_objects() const { 

@@ -2,7 +2,10 @@
 #include <unordered_set>
 
 #include <btBulletCollisionCommon.h>
+#include <Importers/ImportColladaDemo/LoadMeshFromCollada.h>
 #include <Utils/b3BulletDefaultFileIO.h>
+
+#include <OpenGLWindow/GLInstanceGraphicsShape.h>
 
 #include "kineverse_mesh_loader.h"
 #include "kineverse_compound_shape.h"
@@ -55,6 +58,17 @@ tinyobj::attrib_t load_stl_mesh(const std::string& filename) {
         }
         fclose(file);
     }
+    return out;
+}
+
+btTransform transform_from_matrix4x4(const btMatrix4x4& m) {
+    btTransform out;
+    btVector3  origin(m[0][3], m[1][3], m[2][3]);
+    btMatrix3x3 basis(m[0][0], m[0][1], m[0][2],
+                      m[1][0], m[1][1], m[1][2],
+                      m[2][0], m[2][1], m[2][2]);
+    out.setOrigin(origin);
+    out.setBasis(basis);
     return out;
 }
 
@@ -119,7 +133,45 @@ std::shared_ptr<btCollisionShape> load_convex_shape(std::string filename, bool u
         hull_ptr->optimizeConvexHull();
         shape_ptr = hull_ptr;
     } else if (lc_filename.substr(lc_filename.size() - 4) == ".dae") {
-        throw std::runtime_error(string_format(".dae export is not yet supported. File: %s", filename).c_str());
+        b3BulletDefaultFileIO file_io;
+        btAlignedObjectArray<GLInstanceGraphicsShape> visualShapes;
+        btAlignedObjectArray<ColladaGraphicsInstance> visualShapeInstances;
+        btTransform upAxisTrans;
+        upAxisTrans.setIdentity();
+        float unitMeterScaling = 1;
+        LoadMeshFromCollada(filename.c_str(), visualShapes, visualShapeInstances, upAxisTrans, unitMeterScaling, 2, &file_io);
+
+        // Create the shape for the file
+        auto compound_ptr = std::make_shared<KineverseCompoundShape>();
+
+        // Generate convex hulls for all the required shapes
+        std::unordered_map<int, std::shared_ptr<btConvexHullShape>> generated_shapes;
+        for (int i = 0; i < visualShapeInstances.size(); i++) {
+            ColladaGraphicsInstance* instance = &visualShapeInstances[i];
+
+            if (generated_shapes.find(instance->m_shapeIndex) == generated_shapes.end()) {
+                GLInstanceGraphicsShape* gfxShape = &visualShapes[instance->m_shapeIndex];
+
+                auto new_shape = std::make_shared<btConvexHullShape>();
+
+                for (int v = 0; v < gfxShape->m_vertices->size(); v++) {
+                    btVector3 point(gfxShape->m_vertices->at(v).xyzw[0] * unitMeterScaling,
+                                    gfxShape->m_vertices->at(v).xyzw[1] * unitMeterScaling,
+                                    gfxShape->m_vertices->at(v).xyzw[2] * unitMeterScaling); 
+                    new_shape->addPoint(upAxisTrans * point);
+                }
+
+                generated_shapes[instance->m_shapeIndex] = new_shape;
+                new_shape->recalcLocalAabb();
+                new_shape->optimizeConvexHull();
+                m_flat_shape_cache.push_back(new_shape);
+            }
+            
+            btTransform local_transform = transform_from_matrix4x4(instance->m_worldTransform);
+            compound_ptr->addChildShape(local_transform, generated_shapes[i]);
+        }
+
+        shape_ptr = compound_ptr;
     } else {
         throw std::runtime_error(string_format("File '%s' is not .obj, .stl, or .dae", filename.c_str()));
     }
