@@ -1,5 +1,7 @@
 #pragma once
 
+#include <chrono>
+#include <limits>
 #include <string>
 #include <vector>
 
@@ -45,3 +47,61 @@ inline btScalar minAabbDistance(const btVector3& minAabb_a, const btVector3& max
                                   minAabb_b,
                                   maxAabb_b));
 }
+
+
+using Clock     = std::chrono::high_resolution_clock;
+using TimePoint = Clock::time_point;
+using DurationBase = Clock::duration;
+using DurationMs   = std::chrono::milliseconds;
+using DurationUs   = std::chrono::microseconds;
+using DurationFs   = std::chrono::duration<double, std::chrono::seconds>;
+
+class CallTimer {
+ public:
+  void start_timing();
+  DurationBase stop_timing();
+  
+  template<typename T>
+  T stop_timing_as() {
+    auto delta = stop_timing();
+    return std::chrono::duration_cast<T>(delta);
+  }
+
+  DurationBase mean();
+  
+  template<typename T>
+  T mean_as() {
+    auto r = mean();
+    return std::chrono::duration_cast<T>(r);
+  }
+
+  DurationBase sd();
+  
+  template<typename T>
+  T sd_as() {
+    auto r = sd();
+    return std::chrono::duration_cast<T>(r);
+  }
+
+  inline DurationBase min() const { return dmin; }
+
+  template<typename T>
+  inline T min_as() {
+    return std::chrono::duration_cast<T>(min());
+  }
+
+  inline DurationBase max() const { return dmax; }
+  
+  template<typename T>
+  inline T max_as() {
+    return std::chrono::duration_cast<T>(max());
+  }
+
+ private:
+  bool timing = false;
+  DurationBase dmin = DurationBase::max();
+  DurationBase dmax;
+
+  TimePoint start;
+  std::vector<DurationBase> durations;
+};

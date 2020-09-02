@@ -77,7 +77,7 @@ std::unordered_map<std::string, std::shared_ptr<btCollisionShape>> m_convex_shap
 std::unordered_map<std::string, std::shared_ptr<btCollisionShape>> m_trimesh_shape_cache;
 std::unordered_map<const btCollisionShape*, std::string> collision_shape_filenames;
 
-std::shared_ptr<btCollisionShape> load_convex_shape(std::string filename, bool use_cache, btScalar shape_margin) {
+std::shared_ptr<btCollisionShape> load_convex_shape(std::string filename, bool single_shape, bool use_cache, btScalar shape_margin) {
     if (use_cache && m_convex_shape_cache.find(filename) != m_convex_shape_cache.end())
         return m_convex_shape_cache[filename];
 
@@ -92,27 +92,34 @@ std::shared_ptr<btCollisionShape> load_convex_shape(std::string filename, bool u
         std::vector<tinyobj::shape_t> shapes;
         std::string error_msg = tinyobj::LoadObj(attrib, shapes, filename.c_str(), 0, &file_io);
 
-        for (const auto& shape : shapes) {
-            auto new_shape = std::make_shared<btConvexHullShape>();
+		if (error_msg.size() > 0)
+			throw std::runtime_error(error_msg.c_str());
+
+		auto new_shape = std::make_shared<btConvexHullShape>();
+        for (size_t n = 0; n < shapes.size(); n++) {
+			const auto& shape = shapes[n];
             new_shape->setMargin(shape_margin);
-            
-            std::unordered_set<int> used_indices;
 
             for (int i = 0; i < shape.mesh.indices.size(); i++) {
-                if (used_indices.find(shape.mesh.indices[i].vertex_index) == used_indices.end()) {
-                    new_shape->addPoint(btVector3(attrib.vertices[shape.mesh.indices[i].vertex_index * 3 + 0], 
-                                                  attrib.vertices[shape.mesh.indices[i].vertex_index * 3 + 1], 
-                                                  attrib.vertices[shape.mesh.indices[i].vertex_index * 3 + 2]));
-                }
-                used_indices.insert(shape.mesh.indices[i].vertex_index);
+                new_shape->addPoint(btVector3(attrib.vertices[shape.mesh.indices[i].vertex_index * 3 + 0],
+                                              attrib.vertices[shape.mesh.indices[i].vertex_index * 3 + 1],
+                                              attrib.vertices[shape.mesh.indices[i].vertex_index * 3 + 2]));
             }
-            
-            new_shape->recalcLocalAabb();
-            new_shape->optimizeConvexHull();
-            m_flat_shape_cache.push_back(new_shape);
+
+			if (!single_shape) {
+                m_flat_shape_cache.push_back(new_shape);
+                new_shape->recalcLocalAabb();
+                new_shape->optimizeConvexHull();
+				if (n != shapes.size() - 1)
+			        new_shape = std::make_shared<btConvexHullShape>();
+			} else if (n == shapes.size() - 1) { // At the end of reading the last shape, optimize the entire thing
+                new_shape->recalcLocalAabb();
+                new_shape->optimizeConvexHull();
+				m_flat_shape_cache.push_back(new_shape);
+			}
         }
-        
-        if (shapes.size() == 1) {
+
+        if (shapes.size() == 1 || single_shape) {
             shape_ptr = m_flat_shape_cache[m_flat_shape_cache.size() - 1];
         } else {
             auto compound_ptr = std::make_shared<KineverseCompoundShape>();
@@ -141,37 +148,53 @@ std::shared_ptr<btCollisionShape> load_convex_shape(std::string filename, bool u
         float unitMeterScaling = 1;
         LoadMeshFromCollada(filename.c_str(), visualShapes, visualShapeInstances, upAxisTrans, unitMeterScaling, 2, &file_io);
 
+		if (visualShapes.size() == 0 || visualShapeInstances.size() == 0)
+			throw std::runtime_error(string_format("Dae file %s does either not exist, is empty, or does not instantiate any geometry.", filename.c_str()).c_str());
+
         // Create the shape for the file
         auto compound_ptr = std::make_shared<KineverseCompoundShape>();
 
         // Generate convex hulls for all the required shapes
         std::unordered_map<int, std::shared_ptr<btConvexHullShape>> generated_shapes;
-        for (int i = 0; i < visualShapeInstances.size(); i++) {
+
+		auto new_shape = std::make_shared<btConvexHullShape>();
+
+		for (int i = 0; i < visualShapeInstances.size(); i++) {
             ColladaGraphicsInstance* instance = &visualShapeInstances[i];
 
-            if (generated_shapes.find(instance->m_shapeIndex) == generated_shapes.end()) {
-                GLInstanceGraphicsShape* gfxShape = &visualShapes[instance->m_shapeIndex];
+            btTransform local_transform = transform_from_matrix4x4(instance->m_worldTransform);
 
-                auto new_shape = std::make_shared<btConvexHullShape>();
+            if (single_shape || generated_shapes.find(instance->m_shapeIndex) == generated_shapes.end()) {
+                GLInstanceGraphicsShape* gfxShape = &visualShapes[instance->m_shapeIndex];
 
                 for (int v = 0; v < gfxShape->m_vertices->size(); v++) {
                     btVector3 point(gfxShape->m_vertices->at(v).xyzw[0] * unitMeterScaling,
                                     gfxShape->m_vertices->at(v).xyzw[1] * unitMeterScaling,
-                                    gfxShape->m_vertices->at(v).xyzw[2] * unitMeterScaling); 
+                                    gfxShape->m_vertices->at(v).xyzw[2] * unitMeterScaling);
                     new_shape->addPoint(upAxisTrans * point);
                 }
 
-                generated_shapes[instance->m_shapeIndex] = new_shape;
-                new_shape->recalcLocalAabb();
-                new_shape->optimizeConvexHull();
-                m_flat_shape_cache.push_back(new_shape);
+				if (!single_shape) {
+                    generated_shapes[instance->m_shapeIndex] = new_shape;
+                    new_shape->recalcLocalAabb();
+                    new_shape->optimizeConvexHull();
+                    m_flat_shape_cache.push_back(new_shape);
+					new_shape = std::make_shared<btConvexHullShape>(); // Yes, this will create one unused object.
+				}
             }
-            
-            btTransform local_transform = transform_from_matrix4x4(instance->m_worldTransform);
-            compound_ptr->addChildShape(local_transform, generated_shapes[i]);
+
+			if (!single_shape)
+                compound_ptr->addChildShape(local_transform, generated_shapes[instance->m_shapeIndex]);
         }
 
-        shape_ptr = compound_ptr;
+		if (single_shape) {
+			new_shape->recalcLocalAabb();
+			new_shape->optimizeConvexHull();
+			m_flat_shape_cache.push_back(new_shape);
+			shape_ptr = new_shape;
+		} else {
+            shape_ptr = compound_ptr;
+		}
     } else {
         throw std::runtime_error(string_format("File '%s' is not .obj, .stl, or .dae", filename.c_str()));
     }

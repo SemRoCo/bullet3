@@ -80,3 +80,39 @@ btScalar minAabbDistanceSq(const btVector3& minAabb_a, const btVector3& maxAabb_
            std::max(y_delta, static_cast<btScalar>(0)) * std::max(y_delta, static_cast<btScalar>(0)) +
            std::max(z_delta, static_cast<btScalar>(0)) * std::max(z_delta, static_cast<btScalar>(0));
 }
+
+
+void CallTimer::start_timing() {
+  timing = true;
+  start  = Clock::now();
+}
+
+DurationBase CallTimer::stop_timing() {
+  if (!timing)
+    return DurationBase(0);
+
+  timing = false;
+  DurationBase delta = Clock::now() - start;
+  durations.push_back(delta);
+  dmin = std::min(delta, dmin);
+  dmax = std::max(delta, dmax);
+  return delta;
+}
+
+DurationBase CallTimer::mean() {
+  DurationBase acc(0);
+  for (const auto& d : durations)
+    acc += d;
+  return acc / durations.size();
+}
+
+DurationBase CallTimer::sd() {
+  DurationBase m = mean();
+  DurationBase::rep acc = 0;
+  for (const auto& d : durations) {
+    auto delta = d.count() - m.count();
+    acc += delta * delta;
+  }
+
+  return DurationBase(static_cast<DurationBase::rep>(sqrt(acc / (durations.size() - 1))));
+}

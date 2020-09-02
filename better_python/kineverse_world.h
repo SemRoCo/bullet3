@@ -37,7 +37,7 @@ public:
     }
 
     template<typename T>
-    std::vector<T> closest_ray_batch_test(std::vector<btVector3> from, std::vector<btVector3> to) {
+    std::vector<T> closest_ray_batch_test(const std::vector<btVector3>& from, const std::vector<btVector3>& to) {
         std::vector<T> out;
         out.reserve(from.size());
         for (int i = 0; i < from.size(); i++) {
@@ -46,6 +46,8 @@ public:
         }
         return out;
     }
+
+    inline auto& get_object_ptr_map() { return m_collision_object_ptr_map; }
 
     void addCollisionObject(btCollisionObject* collisionObject, 
                             int collisionFilterGroup=btBroadphaseProxy::DefaultFilter, 

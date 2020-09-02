@@ -39,6 +39,72 @@ void batch_set_transforms(const std::vector<CollisionObjectPtr>& objects, const 
     }
 }
 
+py::list py_get_closest_filtered(KineverseWorld& world, 
+                                 CollisionObjectPtr obj, py::list other_objects, btScalar max_distance = 1.0) {
+    PairAccumulator<ClosestPair> pair(std::const_pointer_cast<const KineverseCollisionObject>(obj), world.get_object_ptr_map());
+    pair.m_closestDistanceThreshold = max_distance;
+
+    for (py::handle py_other: other_objects) {
+        KineverseCollisionObject* other = py_other.cast<KineverseCollisionObject*>();
+        world.contactPairTest(obj.get(), other, pair);
+    }
+
+    py::list out(pair.size()); // Let's try to avoid memory reallocation
+    int idx = 0;
+    for (auto kv : pair.m_obj_map) {
+        out[idx] = py::cast(kv.second);
+        idx++;
+    }
+    return out;
+}
+
+py::dict py_get_closest_filtered_batch(KineverseWorld& world, py::dict query) {
+    py::dict out;
+
+    for (auto item : query) {
+        CollisionObjectPtr obj = item.first.cast<CollisionObjectPtr>();
+        py::tuple query_tuple = item.second.cast<py::tuple>();
+        if (query_tuple.size() != 2)
+            throw std::runtime_error(string_format("Query tuple associated with '%s' in query batch "
+                                                   "should be of length 2 but is of length %d", 
+                                                   item.first.attr("__str__")().cast<std::string>().c_str(), 
+                                                   query_tuple.size()).c_str());
+        out[item.first] = py_get_closest_filtered(world, obj, query_tuple[0], query_tuple[1].cast<btScalar>());
+    }
+    return out;
+}
+
+py::list py_get_closest_filtered_POD(KineverseWorld& world, 
+                                     CollisionObjectPtr obj, py::list query) {
+    PairAccumulator<ClosestPair> pair(std::const_pointer_cast<const KineverseCollisionObject>(obj), world.get_object_ptr_map());
+
+    for (py::handle item: query) {
+        auto q_tuple = item.cast<py::tuple>();
+        pair.m_closestDistanceThreshold = q_tuple[1].cast<btScalar>();
+        KineverseCollisionObject* other = q_tuple[0].cast<KineverseCollisionObject*>();
+        world.contactPairTest(obj.get(), other, pair);
+    }
+
+    py::list out(pair.size()); // Let's try to avoid memory reallocation
+    int idx = 0;
+    for (auto kv : pair.m_obj_map) {
+        out[idx] = py::cast(kv.second);
+        idx++;
+    }
+    return out;
+}
+
+py::dict py_get_closest_filtered_POD_batch(KineverseWorld& world, py::dict query) {
+    py::dict out;
+
+    for (auto item : query) {
+        CollisionObjectPtr obj = item.first.cast<CollisionObjectPtr>();
+        py::list query_list = item.second.cast<py::list>();
+        out[item.first] = py_get_closest_filtered_POD(world, obj, query_list);
+    }
+    return out;
+}
+
 using ShapePtr = std::shared_ptr<btCollisionShape>;
 
 
@@ -50,7 +116,9 @@ PYBIND11_MODULE(betterpybullet, m) {
 
 // MESH LOADING
 
-    m.def("load_convex_shape", &load_convex_shape, "Loads mesh file as a convex collision shape. Supported file types .obj, .stl, .dae.", py::arg("filename"), py::arg("use_cache") = true, py::arg("shape_margin") = 0.001);
+    m.def("load_convex_shape", &load_convex_shape,
+		  "Loads mesh file as a convex collision shape. Supported file types .obj, .stl, .dae.",
+		  py::arg("filename"), py::arg("single_shape") = true, py::arg("use_cache") = true, py::arg("shape_margin") = 0.001);
 
     m.def("get_shape_filename", &get_shape_filename, "Returns the name of the mesh file for a given shape, "
                                                      "if the shape is a mesh.", py::arg("shape"));
@@ -397,10 +465,10 @@ PYBIND11_MODULE(betterpybullet, m) {
         .def("get_distance", &KineverseWorld::get_distance, py::arg("object_a"), py::arg("object_b"), py::arg("max_distance") = 1.0)
         .def("get_contacts", &KineverseWorld::get_contacts)
         .def("get_closest_batch", &KineverseWorld::get_closest_batch, "Performs a batched determination of closest object. Parameter maps objects to their max distances", py::arg("max_distances"))
-        .def("get_closest_filtered", &KineverseWorld::get_closest_filtered, "Performs a distance check of the first given object against a list of other objects.", py::arg("obj_a"), py::arg("objects"), py::arg("max_distance"))
-        .def("get_closest_filtered_batch", &KineverseWorld::get_closest_filtered_batch, "Batches the checks for closest objects w.r.t to a set of given objects.", py::arg("query"))
-        .def("get_closest_filtered_POD", &KineverseWorld::get_closest_filtered_POD, "Performs a distance check of the first given object against a list of other objects.", py::arg("obj_a"), py::arg("object_queries"))
-        .def("get_closest_filtered_POD_batch", &KineverseWorld::get_closest_filtered_POD_batch, "Batches the checks for closest objects w.r.t to a set of given objects.", py::arg("query"))
+        .def("get_closest_filtered", &py_get_closest_filtered, "Performs a distance check of the first given object against a list of other objects.", py::arg("obj_a"), py::arg("objects"), py::arg("max_distance"))
+        .def("get_closest_filtered_batch", &py_get_closest_filtered_batch, "Batches the checks for closest objects w.r.t to a set of given objects.", py::arg("query"))
+        .def("get_closest_filtered_POD", &py_get_closest_filtered_POD, "Performs a distance check of the first given object against a list of other objects.", py::arg("obj_a"), py::arg("object_queries"))
+        .def("get_closest_filtered_POD_batch", &py_get_closest_filtered_POD_batch, "Batches the checks for closest objects w.r.t to a set of given objects.", py::arg("query"))
         .def("overlap_aabb", &KineverseWorld::overlap_aabb, py::arg("aabb_min"), py::arg("aabb_max"))
         .def("update_single_aabb", &btCollisionWorld::updateSingleAabb)
         .def("update_aabbs", &btCollisionWorld::updateAabbs)
