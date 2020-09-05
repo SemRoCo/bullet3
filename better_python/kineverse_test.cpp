@@ -8,7 +8,7 @@
 #include "kineverse_mesh_loader.h"
 #include "kineverse_utils.h"
 
-std::ostream& operator<<(std::ostream& s, const ContactPoint& p) {
+std::ostream& operator<<(std::ostream& s, const btContactPoint& p) {
     s << "    on A:\n" << toString(p.m_pointOnA) << '\n'
       << "    on B:\n" << toString(p.m_pointOnB) << '\n'
       << "  normal:\n" << toString(p.m_normalWorldB) << '\n'
@@ -16,7 +16,7 @@ std::ostream& operator<<(std::ostream& s, const ContactPoint& p) {
     return s;
 }
 
-std::ostream& operator<<(std::ostream& s, const ContactPair& p) {
+std::ostream& operator<<(std::ostream& s, const btContactPair& p) {
     s << "Contact between " << p.m_obj_a << " and " << p.m_obj_b << '\n';
     for (const auto& cp: p.m_points)
         s << cp << '\n';
@@ -39,8 +39,8 @@ int main(int argc, char const *argv[]) {
         return 0;
     }
 
-    ContactPair pair1;
-    ClosestPair pair2;
+    btContactPair pair1;
+    btClosestPair pair2;
 
     std::cout << "lol" << std::endl;
 
@@ -70,6 +70,7 @@ int main(int argc, char const *argv[]) {
     auto shape_FridgeDoor       = load_convex_shape("/home/adrian/robots_ws/src/iai_maps/iai_kitchen/meshes/misc/FridgeDoor.obj");
     auto shape_Knob             = load_convex_shape("/home/adrian/robots_ws/src/iai_maps/iai_kitchen/meshes/oven/Knob.obj");
     auto shape_OvenDoor         = load_convex_shape("/home/adrian/robots_ws/src/iai_maps/iai_kitchen/meshes/oven/OvenDoor.obj");
+
     auto shape_caster_L         = load_convex_shape("/opt/ros/melodic/share/pr2_description/meshes/base_v0/caster_L.stl");
     auto shape_forearm          = load_convex_shape("/opt/ros/melodic/share/pr2_description/meshes/forearm_v0/forearm.stl");
     auto shape_wrist_flex       = load_convex_shape("/opt/ros/melodic/share/pr2_description/meshes/forearm_v0/wrist_flex.stl");

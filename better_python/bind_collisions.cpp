@@ -21,6 +21,93 @@
 
 namespace py = pybind11;
 
+class np_point : public py::array_t<btScalar> {
+ public:
+    np_point(const btVector3& vec)
+    : py::array_t<btScalar>({4, 1}) {
+        auto r = mutable_unchecked<2>();
+        r(0, 0) = vec.getX();
+        r(1, 0) = vec.getY();
+        r(2, 0) = vec.getZ();
+        r(3, 0) = 1;
+    }
+};
+
+class np_vector : public py::array_t<btScalar> {
+ public:
+    np_vector(const btVector3& vec)
+    : py::array_t<btScalar>({4, 1}) {
+        auto r = mutable_unchecked<2>();
+        r(0, 0) = vec.getX();
+        r(1, 0) = vec.getY();
+        r(2, 0) = vec.getZ();
+        r(3, 0) = 0;
+    }
+};
+
+template<typename T>
+py::array_t<btScalar> to_np(const T& a);
+
+template<>
+py::array_t<btScalar> to_np(const btVector3& a) {
+    btScalar buffer[4] = {a.getX(), a.getY(), a.getZ(), 0};
+    return py::array_t<btScalar>({4, 1}, buffer);
+}
+
+template<>
+py::array_t<btScalar> to_np(const btVector4& a) {
+    btScalar buffer[4] = {a.getX(), a.getY(), a.getZ(), a.getW()};
+    return py::array_t<btScalar>({4, 1}, buffer);
+}
+
+py::array_t<btScalar> to_np_point(const btVector3& a) {
+    btScalar buffer[4] = {a.getX(), a.getY(), a.getZ(), 1};
+    return py::array_t<btScalar>({4, 1}, buffer);   
+}
+
+template<>
+py::array_t<btScalar> to_np(const btQuaternion& a) {
+    btScalar buffer[4] = {a.getX(), a.getY(), a.getZ(), a.getW()};
+    return py::array_t<btScalar>({4, 1}, buffer);
+}
+
+template<>
+py::array_t<btScalar> to_np(const btMatrix3x3& a) {
+    btScalar buffer[9] = {a[0][0], a[0][1], a[0][2],
+                          a[1][0], a[1][1], a[1][2],
+                          a[2][0], a[2][1], a[2][2],};
+    return py::array_t<btScalar>({3, 3}, buffer);
+}
+
+template<>
+py::array_t<btScalar> to_np(const btTransform& a) {
+    const btMatrix3x3& basis = a.getBasis();
+    const btVector3&   origin = a.getOrigin();
+    btScalar buffer[16] = {basis[0][0], basis[0][1], basis[0][2], origin[0],
+                           basis[1][0], basis[1][1], basis[1][2], origin[1],
+                           basis[2][0], basis[2][1], basis[2][2], origin[2],
+                                  0,        0,        0,         1};
+    return py::array_t<btScalar>({4, 4}, buffer);
+}
+
+template<typename T>
+T from_np(py::array_t<btScalar> a);
+
+template<>
+btTransform from_np(py::array_t<btScalar> a) {
+    if (a.ndim() != 2)
+        throw std::runtime_error(string_format("Numpy array needs to be 2D, but is %dD", a.ndim()).c_str());
+
+    if (a.shape(0) != 4 || a.shape(1) != 4)
+        throw std::runtime_error(string_format("Numpy array is of wrong shape. "
+                                               "Expected is (4, 4) got (%d, %d)", a.shape(0), a.shape(1)).c_str());
+    auto r = a.unchecked<2>();
+    return btTransform(btMatrix3x3(r(0, 0), r(0, 1), r(0, 2),
+                                   r(1, 0), r(1, 1), r(1, 2),
+                                   r(2, 0), r(2, 1), r(2, 2)),
+                       btVector3(r(0, 3), r(1, 3), r(2, 3)));    
+}
+
 void batch_set_transforms(const std::vector<CollisionObjectPtr>& objects, const py::array_t<btScalar>& poses) {
     if (poses.ndim() != 2)
         throw std::runtime_error("Passed array is not 2D");
@@ -39,9 +126,45 @@ void batch_set_transforms(const std::vector<CollisionObjectPtr>& objects, const 
     }
 }
 
+using npContactPoint = ContactPoint<np_point, np_vector>;
+using npContactPair  = ContactPair<np_point, np_vector>;
+using npClosestPair  = ClosestPair<np_point, np_vector>;
+
+py::list py_get_closest(KineverseWorld& world, 
+                        CollisionObjectPtr obj, btScalar max_distance = 1.0) {
+    PairAccumulator<npClosestPair> pair(std::const_pointer_cast<const KineverseCollisionObject>(obj), world.get_object_ptr_map());
+    pair.m_closestDistanceThreshold = max_distance;
+
+    const auto& collision_objects = world.getCollisionObjectArray();
+    for (size_t i = 0; i < collision_objects.size(); i++) {
+        auto other = collision_objects.at(i);
+        if (obj.get() != other)
+            world.contactPairTest(obj.get(), other, pair);
+    }
+
+    py::list out(pair.size()); // Let's try to avoid memory reallocation
+    int idx = 0;
+    for (auto kv : pair.m_obj_map) {
+        out[idx] = py::cast(kv.second);
+        idx++;
+    }
+    return out;
+}
+
+py::dict py_get_closest_batch(KineverseWorld& world, py::dict query) {
+    py::dict out;
+
+    for (auto item : query) {
+        CollisionObjectPtr obj = item.first.cast<CollisionObjectPtr>();
+        auto max_distance = item.second.cast<btScalar>();
+        out[item.first] = py_get_closest(world, obj, max_distance);
+    }
+    return out;
+}
+
 py::list py_get_closest_filtered(KineverseWorld& world, 
                                  CollisionObjectPtr obj, py::list other_objects, btScalar max_distance = 1.0) {
-    PairAccumulator<ClosestPair> pair(std::const_pointer_cast<const KineverseCollisionObject>(obj), world.get_object_ptr_map());
+    PairAccumulator<npClosestPair> pair(std::const_pointer_cast<const KineverseCollisionObject>(obj), world.get_object_ptr_map());
     pair.m_closestDistanceThreshold = max_distance;
 
     for (py::handle py_other: other_objects) {
@@ -76,7 +199,7 @@ py::dict py_get_closest_filtered_batch(KineverseWorld& world, py::dict query) {
 
 py::list py_get_closest_filtered_POD(KineverseWorld& world, 
                                      CollisionObjectPtr obj, py::list query) {
-    PairAccumulator<ClosestPair> pair(std::const_pointer_cast<const KineverseCollisionObject>(obj), world.get_object_ptr_map());
+    PairAccumulator<npClosestPair> pair(std::const_pointer_cast<const KineverseCollisionObject>(obj), world.get_object_ptr_map());
 
     for (py::handle item: query) {
         auto q_tuple = item.cast<py::tuple>();
@@ -114,15 +237,6 @@ PYBIND11_MODULE(betterpybullet, m) {
         return string_format("Better PyBullet. Built: %s %s", __DATE__, __TIME__);
     });
 
-// MESH LOADING
-
-    m.def("load_convex_shape", &load_convex_shape,
-		  "Loads mesh file as a convex collision shape. Supported file types .obj, .stl, .dae.",
-		  py::arg("filename"), py::arg("single_shape") = true, py::arg("use_cache") = true, py::arg("shape_margin") = 0.001);
-
-    m.def("get_shape_filename", &get_shape_filename, "Returns the name of the mesh file for a given shape, "
-                                                     "if the shape is a mesh.", py::arg("shape"));
-
 // VECTORIZATION
 
     m.def("batch_set_transforms", &batch_set_transforms, "Sets the transforms of a list of matrix by extracting it from a stacked numpy matrix.", py::arg("objects"), py::arg("np_pose_matrix"));
@@ -142,6 +256,7 @@ PYBIND11_MODULE(betterpybullet, m) {
         .def("set_euler_ypr", &btMatrix3x3::setEulerYPR)
         .def("set_euler_zyx", &btMatrix3x3::setEulerZYX)
         .def("scaled", &btMatrix3x3::scaled)
+        .def("to_np", &to_np<btMatrix3x3>)
         .def_static("identity", &btMatrix3x3::getIdentity)
         .def_property_readonly("determinant", &btMatrix3x3::determinant)
         .def_property_readonly("adjoint", &btMatrix3x3::adjoint)
@@ -184,6 +299,7 @@ PYBIND11_MODULE(betterpybullet, m) {
         .def("set_min",         &btVector3::setMin)
         .def("set_value",       &btVector3::setValue)
         .def("set_zero",        &btVector3::setZero)
+        .def("to_np", &to_np<btVector3>)
         .def_property_readonly("isZero",  &btVector3::isZero)
         .def_property_readonly("norm_sq", &btVector3::length2)
         .def_property_readonly("norm", &btVector3::length)
@@ -245,7 +361,8 @@ PYBIND11_MODULE(betterpybullet, m) {
         .def("normalized", &btQuaternion::normalized)
         .def("get_angle", &btQuaternion::angle)
         .def("get_angle_shortest_path", &btQuaternion::angleShortestPath)
-        .def("inverse", &btQuaternion::inverse)
+        .def("inv", &btQuaternion::inverse)
+        .def("to_np", &to_np<btQuaternion>)
         .def("nearest", &btQuaternion::nearest)
         .def("farthest", &btQuaternion::farthest)
         .def("slerp", &btQuaternion::slerp)
@@ -292,6 +409,7 @@ PYBIND11_MODULE(betterpybullet, m) {
         .def_property("basis", (btMatrix3x3& (btTransform::*)()) &btTransform::getBasis, &btTransform::setBasis)
         .def("set_identity", &btTransform::setIdentity)
         .def("inv", &btTransform::inverse)
+        .def("to_np", &to_np<btTransform>)
         .def_static("identity", &btTransform::getIdentity)
         .def("__repr__", (std::string (*)(const btTransform&)) &toString)
         .def(py::self *  btVector3())
@@ -299,7 +417,26 @@ PYBIND11_MODULE(betterpybullet, m) {
         .def(py::self *  py::self)
         .def(py::self *= py::self);
 
+// MESH LOADING
 
+    m.def("load_convex_shape", &load_convex_shape,
+          "Loads mesh file as a convex collision shape. Supported file types .obj, .stl, .dae.",
+          py::arg("filename"), 
+          py::arg("single_shape") = true, 
+          py::arg("use_cache") = true, 
+          py::arg("shape_margin") = 0.001,
+          py::arg("scaling") = btVector3(1, 1, 1));
+
+    m.def("get_shape_filename_and_scale", &get_shape_filename_and_scale, "Returns a tuple consisting of mesh file and scale vector for a given shape, "
+                                                     "if the shape is a mesh.", py::arg("shape"));
+    m.def("get_shape_filename", [](const btCollisionShape* shape) {
+        auto temp = get_shape_filename_and_scale(shape);
+        return temp.first;
+    }, "Returns a tuple consisting of mesh file "
+       "and scale vector for a given shape, "
+       "if the shape is a mesh.", py::arg("shape"));
+
+// COLLISION OBJECTS
 
     py::class_<KineverseCollisionObject, CollisionObjectPtr> collision_object(m, "CollisionObject");
 
@@ -314,6 +451,11 @@ PYBIND11_MODULE(betterpybullet, m) {
         .def("activate", &btCollisionObject::activate)
         .def("force_activation_state", &btCollisionObject::forceActivationState)
         .def_property("transform", (btTransform& (btCollisionObject::*)()) &btCollisionObject::getWorldTransform, &btCollisionObject::setWorldTransform)
+        .def_property("np_transform", [](const KineverseCollisionObject& o) {
+            return to_np(o.getWorldTransform());
+        }, [](KineverseCollisionObject& o, py::array_t<btScalar> np_pose) {
+            o.setWorldTransform(from_np<btTransform>(np_pose));
+        })
         .def_property("deactivation_time", &btCollisionObject::getDeactivationTime, &btCollisionObject::setDeactivationTime)
         .def_property("activation_state", &btCollisionObject::getActivationState, &btCollisionObject::setActivationState)
         .def_property("contact_processing_threshold", &btCollisionObject::getContactProcessingThreshold, &btCollisionObject::setContactProcessingThreshold)
@@ -461,10 +603,10 @@ PYBIND11_MODULE(betterpybullet, m) {
         .def(py::init<>())
         .def("closest_ray_test", &KineverseWorld::closest_ray_test<btCollisionWorld::ClosestRayResultCallback>, py::arg("from"), py::arg("to"))
         .def("closest_ray_test_batch", &KineverseWorld::closest_ray_batch_test<btCollisionWorld::ClosestRayResultCallback>, py::arg("from"), py::arg("to"))
-        .def("get_closest", &KineverseWorld::get_closest, py::arg("object"), py::arg("max_distance"))
-        .def("get_distance", &KineverseWorld::get_distance, py::arg("object_a"), py::arg("object_b"), py::arg("max_distance") = 1.0)
-        .def("get_contacts", &KineverseWorld::get_contacts)
-        .def("get_closest_batch", &KineverseWorld::get_closest_batch, "Performs a batched determination of closest object. Parameter maps objects to their max distances", py::arg("max_distances"))
+        .def("get_closest", &py_get_closest, py::arg("object"), py::arg("max_distance"))
+        .def("get_distance", &KineverseWorld::get_distance<npContactPair, npContactPoint>, py::arg("object_a"), py::arg("object_b"), py::arg("max_distance") = 1.0)
+        .def("get_contacts", &KineverseWorld::get_contacts<npContactPair, npContactPoint>)
+        .def("get_closest_batch", &py_get_closest_batch, "Performs a batched determination of closest object. Parameter maps objects to their max distances", py::arg("max_distances"))
         .def("get_closest_filtered", &py_get_closest_filtered, "Performs a distance check of the first given object against a list of other objects.", py::arg("obj_a"), py::arg("objects"), py::arg("max_distance"))
         .def("get_closest_filtered_batch", &py_get_closest_filtered_batch, "Batches the checks for closest objects w.r.t to a set of given objects.", py::arg("query"))
         .def("get_closest_filtered_POD", &py_get_closest_filtered_POD, "Performs a distance check of the first given object against a list of other objects.", py::arg("obj_a"), py::arg("object_queries"))
@@ -491,21 +633,21 @@ PYBIND11_MODULE(betterpybullet, m) {
             return out;
         }, py::arg("shape"), py::arg("transform") = btTransform::getIdentity());;
 
-    py::class_<ContactPoint>(m, "ContactPoint")
+    py::class_<npContactPoint>(m, "ContactPoint")
         .def(py::init<const btVector3&, const btVector3&, const btVector3&, btScalar>())
-        .def_readonly("point_a", &ContactPoint::m_pointOnA)
-        .def_readonly("point_b", &ContactPoint::m_pointOnB)
-        .def_readonly("normal_world_b", &ContactPoint::m_normalWorldB)
-        .def_readonly("distance", &ContactPoint::m_distance);
+        .def_readonly("point_a", &npContactPoint::m_pointOnA)
+        .def_readonly("point_b", &npContactPoint::m_pointOnB)
+        .def_readonly("normal_world_b", &npContactPoint::m_normalWorldB)
+        .def_readonly("distance", &npContactPoint::m_distance);
 
-    py::class_<ContactPair>(m, "ContactPair")
+    py::class_<npContactPair>(m, "ContactPair")
         .def(py::init<std::shared_ptr<const KineverseCollisionObject>, 
                       std::shared_ptr<const KineverseCollisionObject>>())
-        .def_readonly("obj_a", &ContactPair::m_obj_a)
-        .def_readonly("obj_b", &ContactPair::m_obj_b)
-        .def_readonly("points", &ContactPair::m_points);
+        .def_readonly("obj_a", &npContactPair::m_obj_a)
+        .def_readonly("obj_b", &npContactPair::m_obj_b)
+        .def_readonly("points", &npContactPair::m_points);
 
-    py::class_<ClosestPair, ContactPair>(m, "ClosestPair");
+    py::class_<npClosestPair, npContactPair>(m, "ClosestPair");
 
 //////// SHAPES
 
@@ -573,7 +715,10 @@ PYBIND11_MODULE(betterpybullet, m) {
         .def("update_child_transform", &btCompoundShape::updateChildTransform, py::arg("index"), py::arg("transform"), py::arg("recompute_aabb"))
         .def_property_readonly("nchildren", &btCompoundShape::getNumChildShapes)
         .def_property_readonly("file_path", [](ShapePtr shape) {
-            return get_shape_filename(shape.get());
+            return get_shape_filename_and_scale(shape.get()).first;
+        })
+        .def_property_readonly("scaling", [](ShapePtr shape) {
+            return get_shape_filename_and_scale(shape.get()).second;
         })
         .def_property_readonly("child_shapes", &KineverseCompoundShape::get_child_shapes);
 
@@ -601,6 +746,6 @@ PYBIND11_MODULE(betterpybullet, m) {
             return out;
         })
         .def_property_readonly("file_path", [](btCollisionShape* shape) {
-            return get_shape_filename(shape);
+            return get_shape_filename_and_scale(shape).first;
         });
 }

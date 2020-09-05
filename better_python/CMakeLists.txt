@@ -5,7 +5,7 @@ IF(BUILD_PYBULLET)
     add_library(kineverse SHARED
                 kineverse_utils.cpp
                 kineverse_mesh_loader.cpp
-                kineverse_query.cpp
+                # kineverse_query.cpp
                 kineverse_world.cpp
                 kineverse_collision_object.cpp
                 kineverse_compound_shape.cpp
@@ -18,6 +18,12 @@ IF(BUILD_PYBULLET)
 
     add_executable(kineverse_test kineverse_test.cpp)
     target_link_libraries(kineverse_test kineverse)
+
+    add_executable(kineverse_test2 kineverse_test2.cpp)
+    target_link_libraries(kineverse_test2 kineverse)
+
+    add_executable(no_pybullet_dist_query no_pybullet_dist_query.cpp)
+    target_link_libraries(no_pybullet_dist_query kineverse BulletRobotics)
 
     SET(bpb_SRCS
         bind_collisions.cpp)

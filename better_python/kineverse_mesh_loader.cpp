@@ -72,14 +72,42 @@ btTransform transform_from_matrix4x4(const btMatrix4x4& m) {
     return out;
 }
 
-std::vector<std::shared_ptr<btCollisionShape>> m_flat_shape_cache;
-std::unordered_map<std::string, std::shared_ptr<btCollisionShape>> m_convex_shape_cache;
-std::unordered_map<std::string, std::shared_ptr<btCollisionShape>> m_trimesh_shape_cache;
-std::unordered_map<const btCollisionShape*, std::string> collision_shape_filenames;
+namespace std {
+    template <>
+    struct hash<btVector3> {
+        std::size_t operator()(const btVector3& k) const {
+            using std::hash;
 
-std::shared_ptr<btCollisionShape> load_convex_shape(std::string filename, bool single_shape, bool use_cache, btScalar shape_margin) {
-    if (use_cache && m_convex_shape_cache.find(filename) != m_convex_shape_cache.end())
-        return m_convex_shape_cache[filename];
+            return ((hash<btScalar>()(k.getX())
+                   ^ (hash<btScalar>()(k.getY()) << 1)) >> 1)
+                   ^ (hash<btScalar>()(k.getZ()) << 1);
+        }
+    };
+}
+
+struct pairhash {
+public:
+    template <typename T, typename U>
+    std::size_t operator()(const std::pair<T, U> &x) const {
+        return std::hash<T>()(x.first) ^ std::hash<U>()(x.second);
+    }
+};
+
+using FileScalePair = std::pair<std::string, btVector3>;
+
+std::vector<std::shared_ptr<btCollisionShape>> m_flat_shape_cache;
+std::unordered_map<FileScalePair, std::shared_ptr<btCollisionShape>, pairhash> m_convex_shape_cache;
+std::unordered_map<std::string, std::shared_ptr<btCollisionShape>> m_trimesh_shape_cache;
+std::unordered_map<const btCollisionShape*, FileScalePair> collision_shape_filenames;
+
+std::shared_ptr<btCollisionShape> load_convex_shape(std::string filename,
+                                                    bool single_shape,
+                                                    bool use_cache,
+                                                    btScalar shape_margin,
+                                                    btVector3 scaling) {
+    FileScalePair key(filename, scaling);
+    if (use_cache && m_convex_shape_cache.find(key) != m_convex_shape_cache.end())
+        return m_convex_shape_cache[key];
 
 
     std::string lc_filename = filename;
@@ -103,11 +131,12 @@ std::shared_ptr<btCollisionShape> load_convex_shape(std::string filename, bool s
             for (int i = 0; i < shape.mesh.indices.size(); i++) {
                 new_shape->addPoint(btVector3(attrib.vertices[shape.mesh.indices[i].vertex_index * 3 + 0],
                                               attrib.vertices[shape.mesh.indices[i].vertex_index * 3 + 1],
-                                              attrib.vertices[shape.mesh.indices[i].vertex_index * 3 + 2]));
+                                              attrib.vertices[shape.mesh.indices[i].vertex_index * 3 + 2]), false);
             }
 
 			if (!single_shape) {
                 m_flat_shape_cache.push_back(new_shape);
+                new_shape->setLocalScaling(scaling);
                 new_shape->recalcLocalAabb();
                 new_shape->optimizeConvexHull();
 				if (n != shapes.size() - 1)
@@ -115,6 +144,7 @@ std::shared_ptr<btCollisionShape> load_convex_shape(std::string filename, bool s
 			} else if (n == shapes.size() - 1) { // At the end of reading the last shape, optimize the entire thing
                 new_shape->recalcLocalAabb();
                 new_shape->optimizeConvexHull();
+                new_shape->setLocalScaling(scaling);
 				m_flat_shape_cache.push_back(new_shape);
 			}
         }
@@ -135,7 +165,8 @@ std::shared_ptr<btCollisionShape> load_convex_shape(std::string filename, bool s
         for (int i = 0; i < attrib.vertices.size(); i += 3) 
             hull_ptr->addPoint(btVector3(attrib.vertices[i + 0], 
                                          attrib.vertices[i + 1], 
-                                         attrib.vertices[i + 2]));
+                                         attrib.vertices[i + 2]), false);
+        hull_ptr->setLocalScaling(scaling);
         hull_ptr->recalcLocalAabb();
         hull_ptr->optimizeConvexHull();
         shape_ptr = hull_ptr;
@@ -163,6 +194,7 @@ std::shared_ptr<btCollisionShape> load_convex_shape(std::string filename, bool s
             ColladaGraphicsInstance* instance = &visualShapeInstances[i];
 
             btTransform local_transform = transform_from_matrix4x4(instance->m_worldTransform);
+            local_transform.setOrigin(local_transform.getOrigin() * scaling);
 
             if (single_shape || generated_shapes.find(instance->m_shapeIndex) == generated_shapes.end()) {
                 GLInstanceGraphicsShape* gfxShape = &visualShapes[instance->m_shapeIndex];
@@ -171,11 +203,12 @@ std::shared_ptr<btCollisionShape> load_convex_shape(std::string filename, bool s
                     btVector3 point(gfxShape->m_vertices->at(v).xyzw[0] * unitMeterScaling,
                                     gfxShape->m_vertices->at(v).xyzw[1] * unitMeterScaling,
                                     gfxShape->m_vertices->at(v).xyzw[2] * unitMeterScaling);
-                    new_shape->addPoint(upAxisTrans * point);
+                    new_shape->addPoint(upAxisTrans * point, false);
                 }
 
 				if (!single_shape) {
                     generated_shapes[instance->m_shapeIndex] = new_shape;
+                    new_shape->setLocalScaling(scaling);
                     new_shape->recalcLocalAabb();
                     new_shape->optimizeConvexHull();
                     m_flat_shape_cache.push_back(new_shape);
@@ -188,6 +221,7 @@ std::shared_ptr<btCollisionShape> load_convex_shape(std::string filename, bool s
         }
 
 		if (single_shape) {
+            new_shape->setLocalScaling(scaling);
 			new_shape->recalcLocalAabb();
 			new_shape->optimizeConvexHull();
 			m_flat_shape_cache.push_back(new_shape);
@@ -199,81 +233,81 @@ std::shared_ptr<btCollisionShape> load_convex_shape(std::string filename, bool s
         throw std::runtime_error(string_format("File '%s' is not .obj, .stl, or .dae", filename.c_str()));
     }
 
-    m_convex_shape_cache[filename] = shape_ptr;
-    collision_shape_filenames[shape_ptr.get()] = filename;
+    m_convex_shape_cache[key] = shape_ptr;
+    collision_shape_filenames[shape_ptr.get()] = key;
     return shape_ptr;
 }
 
-std::shared_ptr<btCollisionShape> load_trimesh_shape(std::string filename, bool use_cache) {
-    if (use_cache && m_trimesh_shape_cache.find(filename) != m_trimesh_shape_cache.end())
-        return m_trimesh_shape_cache[filename];
+// std::shared_ptr<btCollisionShape> load_trimesh_shape(std::string filename, bool use_cache) {
+//     if (use_cache && m_trimesh_shape_cache.find(filename) != m_trimesh_shape_cache.end())
+//         return m_trimesh_shape_cache[filename];
 
 
-    std::string lc_filename = filename;
-    std::transform(lc_filename.begin(), lc_filename.end(), lc_filename.begin(), [](unsigned char c) { return std::tolower(c); });
+//     std::string lc_filename = filename;
+//     std::transform(lc_filename.begin(), lc_filename.end(), lc_filename.begin(), [](unsigned char c) { return std::tolower(c); });
 
-    std::shared_ptr<btCollisionShape> shape_ptr;
-    if (lc_filename.substr(lc_filename.size() - 4) == ".obj") {
-        b3BulletDefaultFileIO file_io;
-        tinyobj::attrib_t attrib;
-        std::vector<tinyobj::shape_t> shapes;
-        std::string error_msg = tinyobj::LoadObj(attrib, shapes, filename.c_str(), 0, &file_io);
+//     std::shared_ptr<btCollisionShape> shape_ptr;
+//     if (lc_filename.substr(lc_filename.size() - 4) == ".obj") {
+//         b3BulletDefaultFileIO file_io;
+//         tinyobj::attrib_t attrib;
+//         std::vector<tinyobj::shape_t> shapes;
+//         std::string error_msg = tinyobj::LoadObj(attrib, shapes, filename.c_str(), 0, &file_io);
         
-        for (const auto& shape : shapes) {
-            auto mesh_interface = std::make_shared<btTriangleMesh>();
+//         for (const auto& shape : shapes) {
+//             auto mesh_interface = std::make_shared<btTriangleMesh>();
 
-            for (int i = 0; i < shape.mesh.indices.size(); i += 3) {
-                mesh_interface->addTriangle(btVector3(attrib.vertices[shape.mesh.indices[i].vertex_index + 0], 
-                                                      attrib.vertices[shape.mesh.indices[i].vertex_index + 1], 
-                                                      attrib.vertices[shape.mesh.indices[i].vertex_index + 2]),
-                                            btVector3(attrib.vertices[shape.mesh.indices[i + 1].vertex_index + 0], 
-                                                      attrib.vertices[shape.mesh.indices[i + 1].vertex_index + 1], 
-                                                      attrib.vertices[shape.mesh.indices[i + 1].vertex_index + 2]),
-                                            btVector3(attrib.vertices[shape.mesh.indices[i + 2].vertex_index + 0], 
-                                                      attrib.vertices[shape.mesh.indices[i + 2].vertex_index + 1], 
-                                                      attrib.vertices[shape.mesh.indices[i + 2].vertex_index + 2]));
-            }
+//             for (int i = 0; i < shape.mesh.indices.size(); i += 3) {
+//                 mesh_interface->addTriangle(btVector3(attrib.vertices[shape.mesh.indices[i].vertex_index + 0], 
+//                                                       attrib.vertices[shape.mesh.indices[i].vertex_index + 1], 
+//                                                       attrib.vertices[shape.mesh.indices[i].vertex_index + 2]),
+//                                             btVector3(attrib.vertices[shape.mesh.indices[i + 1].vertex_index + 0], 
+//                                                       attrib.vertices[shape.mesh.indices[i + 1].vertex_index + 1], 
+//                                                       attrib.vertices[shape.mesh.indices[i + 1].vertex_index + 2]),
+//                                             btVector3(attrib.vertices[shape.mesh.indices[i + 2].vertex_index + 0], 
+//                                                       attrib.vertices[shape.mesh.indices[i + 2].vertex_index + 1], 
+//                                                       attrib.vertices[shape.mesh.indices[i + 2].vertex_index + 2]));
+//             }
             
-            auto new_shape = std::make_shared<KineverseBvhTriangleMeshShape>(mesh_interface, true, true);
-            m_flat_shape_cache.push_back(new_shape);
-        }
+//             auto new_shape = std::make_shared<KineverseBvhTriangleMeshShape>(mesh_interface, true, true);
+//             m_flat_shape_cache.push_back(new_shape);
+//         }
         
-        if (shapes.size() == 1) {
-            shape_ptr = m_flat_shape_cache[m_flat_shape_cache.size() - 1];
-        } else {
-            auto compound_ptr = std::make_shared<KineverseCompoundShape>();
-            for (int i = m_flat_shape_cache.size() - shapes.size(); i < m_flat_shape_cache.size(); i++)
-                compound_ptr->addChildShape(btTransform::getIdentity(), m_flat_shape_cache[i]);
-            shape_ptr = compound_ptr;
-        }
-    } else if (lc_filename.substr(lc_filename.size() - 4) == ".stl") {
-        auto attrib = load_stl_mesh(filename);
-        auto mesh_interface = std::make_shared<btTriangleMesh>();
+//         if (shapes.size() == 1) {
+//             shape_ptr = m_flat_shape_cache[m_flat_shape_cache.size() - 1];
+//         } else {
+//             auto compound_ptr = std::make_shared<KineverseCompoundShape>();
+//             for (int i = m_flat_shape_cache.size() - shapes.size(); i < m_flat_shape_cache.size(); i++)
+//                 compound_ptr->addChildShape(btTransform::getIdentity(), m_flat_shape_cache[i]);
+//             shape_ptr = compound_ptr;
+//         }
+//     } else if (lc_filename.substr(lc_filename.size() - 4) == ".stl") {
+//         auto attrib = load_stl_mesh(filename);
+//         auto mesh_interface = std::make_shared<btTriangleMesh>();
 
-        for (int i = 0; i < attrib.vertices.size(); i += 9) 
-            mesh_interface->addTriangle(btVector3(attrib.vertices[i + 0], 
-                                                  attrib.vertices[i + 1], 
-                                                  attrib.vertices[i + 2]),
-                                        btVector3(attrib.vertices[i + 3], 
-                                                  attrib.vertices[i + 4], 
-                                                  attrib.vertices[i + 5]),
-                                        btVector3(attrib.vertices[i + 6], 
-                                                  attrib.vertices[i + 7], 
-                                                  attrib.vertices[i + 8]));
-        shape_ptr = std::make_shared<KineverseBvhTriangleMeshShape>(mesh_interface, true, true);
-    } else if (lc_filename.substr(lc_filename.size() - 4) == ".dae") {
-        throw std::runtime_error(string_format(".dae export is not yet supported. File: %s", filename).c_str());
-    } else {
-        throw std::runtime_error(string_format("File '%s' is not .obj, .stl, or .dae", filename.c_str()));
-    }
+//         for (int i = 0; i < attrib.vertices.size(); i += 9) 
+//             mesh_interface->addTriangle(btVector3(attrib.vertices[i + 0], 
+//                                                   attrib.vertices[i + 1], 
+//                                                   attrib.vertices[i + 2]),
+//                                         btVector3(attrib.vertices[i + 3], 
+//                                                   attrib.vertices[i + 4], 
+//                                                   attrib.vertices[i + 5]),
+//                                         btVector3(attrib.vertices[i + 6], 
+//                                                   attrib.vertices[i + 7], 
+//                                                   attrib.vertices[i + 8]));
+//         shape_ptr = std::make_shared<KineverseBvhTriangleMeshShape>(mesh_interface, true, true);
+//     } else if (lc_filename.substr(lc_filename.size() - 4) == ".dae") {
+//         throw std::runtime_error(string_format(".dae export is not yet supported. File: %s", filename).c_str());
+//     } else {
+//         throw std::runtime_error(string_format("File '%s' is not .obj, .stl, or .dae", filename.c_str()));
+//     }
 
-    m_trimesh_shape_cache[filename] = shape_ptr;
-    collision_shape_filenames[shape_ptr.get()] = filename;
-    return shape_ptr;
-}
+//     m_trimesh_shape_cache[filename] = shape_ptr;
+//     collision_shape_filenames[shape_ptr.get()] = key;
+//     return shape_ptr;
+// }
 
-std::string get_shape_filename(const btCollisionShape* shape) {
+FileScalePair get_shape_filename_and_scale(const btCollisionShape* shape) {
     if (collision_shape_filenames.find(shape) != collision_shape_filenames.end())
         return collision_shape_filenames[shape];
-    return "";
+    return FileScalePair();
 }
