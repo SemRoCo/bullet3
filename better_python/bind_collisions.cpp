@@ -456,6 +456,9 @@ PYBIND11_MODULE(betterpybullet, m) {
         }, [](KineverseCollisionObject& o, py::array_t<btScalar> np_pose) {
             o.setWorldTransform(from_np<btTransform>(np_pose));
         })
+        .def_property_readonly("np_inv_transform", [](const KineverseCollisionObject& o) {
+            return to_np(o.getWorldTransform().inverse());
+        })
         .def_property("deactivation_time", &btCollisionObject::getDeactivationTime, &btCollisionObject::setDeactivationTime)
         .def_property("activation_state", &btCollisionObject::getActivationState, &btCollisionObject::setActivationState)
         .def_property("contact_processing_threshold", &btCollisionObject::getContactProcessingThreshold, &btCollisionObject::setContactProcessingThreshold)
