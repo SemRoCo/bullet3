@@ -19,11 +19,15 @@ IF(BUILD_PYBULLET)
     add_executable(kineverse_test kineverse_test.cpp)
     target_link_libraries(kineverse_test kineverse)
 
-    add_executable(kineverse_test2 kineverse_test2.cpp)
-    target_link_libraries(kineverse_test2 kineverse)
+    # add_executable(kineverse_test2 kineverse_test2.cpp)
+    # target_link_libraries(kineverse_test2 kineverse)
 
-    add_executable(no_pybullet_dist_query no_pybullet_dist_query.cpp)
-    target_link_libraries(no_pybullet_dist_query kineverse BulletRobotics)
+    # add_executable(no_pybullet_dist_query no_pybullet_dist_query.cpp)
+    # target_link_libraries(no_pybullet_dist_query kineverse BulletRobotics)
+
+    # add_executable(bpb_pybullet_comparison bpb_pybullet_comparison.cpp)
+    # target_link_libraries(bpb_pybullet_comparison kineverse BulletRobotics)
+
 
     SET(bpb_SRCS
         bind_collisions.cpp)
