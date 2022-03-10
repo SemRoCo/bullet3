@@ -61,3 +61,58 @@ std::string toString(const btVector3& vector) {
 std::string toString(const btQuaternion& quat) {
     return string_format("%f\n%f\n%f\n%f", quat.x(), quat.y(), quat.z(), quat.w());
 }
+
+btScalar minAabbDistanceSq(const btVector3& minAabb_a, const btVector3& maxAabb_a,
+                           const btVector3& minAabb_b, const btVector3& maxAabb_b) {
+    btScalar x_delta = std::max(minAabb_a.m_floats[0] - maxAabb_b.m_floats[0], 
+                                minAabb_b.m_floats[0] - maxAabb_a.m_floats[0]);
+    btScalar y_delta = std::max(minAabb_a.m_floats[1] - maxAabb_b.m_floats[1], 
+                                minAabb_b.m_floats[1] - maxAabb_a.m_floats[1]);
+    btScalar z_delta = std::max(minAabb_a.m_floats[2] - maxAabb_b.m_floats[2], 
+                                minAabb_b.m_floats[2] - maxAabb_a.m_floats[2]);
+
+    if (x_delta < 0 && y_delta < 0 && z_delta < 0) { // Overlap
+        return 0;
+    }
+    
+    // Return squared shortest distance, weeding out overlap
+    return std::max(x_delta, static_cast<btScalar>(0)) * std::max(x_delta, static_cast<btScalar>(0)) +
+           std::max(y_delta, static_cast<btScalar>(0)) * std::max(y_delta, static_cast<btScalar>(0)) +
+           std::max(z_delta, static_cast<btScalar>(0)) * std::max(z_delta, static_cast<btScalar>(0));
+}
+
+
+void CallTimer::start_timing() {
+  timing = true;
+  start  = Clock::now();
+}
+
+DurationBase CallTimer::stop_timing() {
+  if (!timing)
+    return DurationBase(0);
+
+  timing = false;
+  DurationBase delta = Clock::now() - start;
+  durations.push_back(delta);
+  dmin = std::min(delta, dmin);
+  dmax = std::max(delta, dmax);
+  return delta;
+}
+
+DurationBase CallTimer::mean() {
+  DurationBase acc(0);
+  for (const auto& d : durations)
+    acc += d;
+  return acc / durations.size();
+}
+
+DurationBase CallTimer::sd() {
+  DurationBase m = mean();
+  DurationBase::rep acc = 0;
+  for (const auto& d : durations) {
+    auto delta = d.count() - m.count();
+    acc += delta * delta;
+  }
+
+  return DurationBase(static_cast<DurationBase::rep>(sqrt(acc / (durations.size() - 1))));
+}

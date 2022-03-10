@@ -1,4 +1,4 @@
-import pybullet_utils.bullet_client as bc
+from pybullet_utils import bullet_client as bc
 import pybullet
 import pybullet_data
 
@@ -15,6 +15,5 @@ p0.loadURDF("r2d2.urdf")
 p1.loadSDF("stadium.sdf")
 print(p0._client)
 print(p1._client)
-print("p0.getNumBodies()=",p0.getNumBodies())
-print("p1.getNumBodies()=",p1.getNumBodies())
-
+print("p0.getNumBodies()=", p0.getNumBodies())
+print("p1.getNumBodies()=", p1.getNumBodies())

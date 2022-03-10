@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """Tests for the PPO algorithm usage example."""
 
 from __future__ import absolute_import
@@ -21,14 +20,13 @@ from __future__ import print_function
 import functools
 import itertools
 
-import tensorflow as tf
+import tf.compat.v1 as tf
 
 from google3.robotics.reinforcement_learning.agents import ppo
 from google3.robotics.reinforcement_learning.agents import tools
 from google3.robotics.reinforcement_learning.agents.scripts import configs
 from google3.robotics.reinforcement_learning.agents.scripts import networks
 from google3.robotics.reinforcement_learning.agents.scripts import train
-
 
 FLAGS = tf.app.flags.FLAGS
 
@@ -65,9 +63,11 @@ class PPOTest(tf.test.TestCase):
     for network, observ_shape in itertools.product(nets, observ_shapes):
       config = self._define_config()
       with config.unlocked:
-        config.env = functools.partial(
-            tools.MockEnvironment, observ_shape, action_shape=(3,),
-            min_duration=15, max_duration=15)
+        config.env = functools.partial(tools.MockEnvironment,
+                                       observ_shape,
+                                       action_shape=(3,),
+                                       min_duration=15,
+                                       max_duration=15)
         config.max_length = 20
         config.steps = 100
         config.network = network
@@ -77,9 +77,11 @@ class PPOTest(tf.test.TestCase):
   def test_no_crash_variable_duration(self):
     config = self._define_config()
     with config.unlocked:
-      config.env = functools.partial(
-          tools.MockEnvironment, observ_shape=(2, 3), action_shape=(3,),
-          min_duration=5, max_duration=25)
+      config.env = functools.partial(tools.MockEnvironment,
+                                     observ_shape=(2, 3),
+                                     action_shape=(3,),
+                                     min_duration=5,
+                                     max_duration=25)
       config.max_length = 25
       config.steps = 200
       config.network = networks.RecurrentGaussianPolicy

@@ -8,7 +8,7 @@
 #include "kineverse_mesh_loader.h"
 #include "kineverse_utils.h"
 
-std::ostream& operator<<(std::ostream& s, const ContactPoint& p) {
+std::ostream& operator<<(std::ostream& s, const btContactPoint& p) {
     s << "    on A:\n" << toString(p.m_pointOnA) << '\n'
       << "    on B:\n" << toString(p.m_pointOnB) << '\n'
       << "  normal:\n" << toString(p.m_normalWorldB) << '\n'
@@ -16,7 +16,7 @@ std::ostream& operator<<(std::ostream& s, const ContactPoint& p) {
     return s;
 }
 
-std::ostream& operator<<(std::ostream& s, const ContactPair& p) {
+std::ostream& operator<<(std::ostream& s, const btContactPair& p) {
     s << "Contact between " << p.m_obj_a << " and " << p.m_obj_b << '\n';
     for (const auto& cp: p.m_points)
         s << cp << '\n';
@@ -39,8 +39,8 @@ int main(int argc, char const *argv[]) {
         return 0;
     }
 
-    ContactPair pair1;
-    ClosestPair pair2;
+    btContactPair pair1;
+    btClosestPair pair2;
 
     std::cout << "lol" << std::endl;
 
@@ -431,7 +431,7 @@ int main(int argc, char const *argv[]) {
 
     world.updateAabbs();
 
-    std::unordered_map<CollisionObjectPtr, float> qbatch =  {
+    std::unordered_map<CollisionObjectPtr, btScalar> qbatch =  {
         {pr2_l_upper_arm_roll_link, 4.0f},
         {pr2_r_gripper_r_finger_tip_link, 4.0f},
         {pr2_r_forearm_link, 4.0f},
@@ -472,9 +472,9 @@ int main(int argc, char const *argv[]) {
 
     for (int i = 0; i < 1; i++) {
         auto closest_pairs = world.get_closest_batch(qbatch);
-        // for (const auto& pair: closest_pairs)
-        //     for (const auto& cp: pair.second)
-        //         std::cout << cp << std::endl;
+        for (const auto& pair: closest_pairs)
+            for (const auto& cp: pair.second)
+                std::cout << cp << std::endl;
     }
 
     std::cout << "Done with distance checks." << std::endl;

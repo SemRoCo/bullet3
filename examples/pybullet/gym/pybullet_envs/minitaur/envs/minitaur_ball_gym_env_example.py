@@ -4,7 +4,7 @@
 
 import math
 
-import tensorflow as tf
+import tf.compat.v1 as tf
 import minitaur_ball_gym_env
 
 
@@ -31,4 +31,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+  main()

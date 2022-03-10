@@ -7,7 +7,7 @@
 
 #include "kineverse_collision_object.h"
 
-
+template<typename TPoint, typename TVector>
 struct ContactPoint {
     ContactPoint()
     : m_distance(0.0f) {}
@@ -21,42 +21,67 @@ struct ContactPoint {
     , m_normalWorldB(world_normalB)
     , m_distance(distance) {}
 
-    btVector3 m_pointOnA;
-    btVector3 m_pointOnB;
-    btVector3 m_normalWorldB;
+    TPoint m_pointOnA;
+    TPoint m_pointOnB;
+    TVector m_normalWorldB;
     btScalar m_distance;
+
+    inline bool operator< (const ContactPoint<TPoint, TVector>& other) {
+        return m_distance < other.m_distance;
+    }
 };
 
+template<typename TPoint, typename TVector>
 struct ContactPair : public btCollisionWorld::ContactResultCallback {
-    ContactPair();
+    ContactPair() {}
 
     ContactPair(std::shared_ptr<const KineverseCollisionObject> obj_a,
-                std::shared_ptr<const KineverseCollisionObject> obj_b);  
+                std::shared_ptr<const KineverseCollisionObject> obj_b)
+    : m_obj_a(obj_a)
+    , m_obj_b(obj_b) {}  
 
     virtual ~ContactPair() = default;
 
-    virtual bool needsCollision(btBroadphaseProxy* proxy0) const;
+    virtual bool needsCollision(btBroadphaseProxy* proxy0) const { return true; }
     
     virtual btScalar addSingleResult(btManifoldPoint& cp, 
                         const btCollisionObjectWrapper* colObj0Wrap, int partId0, int index0,
-                        const btCollisionObjectWrapper* colObj1Wrap, int partId1, int index1);
+                        const btCollisionObjectWrapper* colObj1Wrap, int partId1, int index1) {
+        m_points.push_back(ContactPoint<TPoint, TVector>(cp.m_localPointA,
+                                                         cp.m_localPointB,
+                                                         cp.m_normalWorldOnB, 
+                                                         cp.getDistance()));
+        return 1;
+    }
 
     std::shared_ptr<const KineverseCollisionObject> m_obj_a;
     std::shared_ptr<const KineverseCollisionObject> m_obj_b;
-    std::vector<ContactPoint> m_points;
+    std::vector<ContactPoint<TPoint, TVector>> m_points;
 };
 
-struct ClosestPair : public ContactPair {
-    ClosestPair();
+template<typename TPoint, typename TVector>
+struct ClosestPair : public ContactPair<TPoint, TVector> {
+    ClosestPair() : ContactPair<TPoint, TVector>() {}
 
     ClosestPair(std::shared_ptr<const KineverseCollisionObject> obj_a,
-                std::shared_ptr<const KineverseCollisionObject> obj_b);
+                std::shared_ptr<const KineverseCollisionObject> obj_b)
+    : ContactPair<TPoint, TVector>(obj_a, obj_b) {}
 
     virtual ~ClosestPair() = default;
 
     virtual btScalar addSingleResult(btManifoldPoint& cp, 
                         const btCollisionObjectWrapper* colObj0Wrap, int partId0, int index0,
-                        const btCollisionObjectWrapper* colObj1Wrap, int partId1, int index1);
+                        const btCollisionObjectWrapper* colObj1Wrap, int partId1, int index1) {
+        if (this->m_points.size() == 0) {
+            return ContactPair<TPoint, TVector>::addSingleResult(cp, colObj0Wrap, partId0, index0, colObj1Wrap, partId1, index1);
+        } else if (cp.getDistance() < this->m_points[0].m_distance) {
+            this->m_points[0].m_pointOnA     = cp.m_localPointA;
+            this->m_points[0].m_pointOnB     = cp.m_localPointB;
+            this->m_points[0].m_normalWorldB = cp.m_normalWorldOnB; 
+            this->m_points[0].m_distance     = cp.getDistance();
+        }
+        return 1;
+    }
 };
 
 

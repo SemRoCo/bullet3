@@ -6,7 +6,14 @@ from __future__ import print_function
 
 import os
 import time
-import tensorflow as tf
+
+import inspect
+currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+parentdir = os.path.dirname(os.path.dirname(os.path.dirname(currentdir)))
+print("parentdir=", parentdir)
+os.sys.path.insert(0, parentdir)
+
+import tf.compat.v1 as tf
 from pybullet_envs.minitaur.agents.scripts import utility
 import pybullet_data
 from pybullet_envs.minitaur.envs import simple_ppo_agent
@@ -26,13 +33,12 @@ def main(argv):
   network = config.network
 
   with tf.Session() as sess:
-    agent = simple_ppo_agent.SimplePPOPolicy(
-        sess,
-        env,
-        network,
-        policy_layers=policy_layers,
-        value_layers=value_layers,
-        checkpoint=os.path.join(LOG_DIR, CHECKPOINT))
+    agent = simple_ppo_agent.SimplePPOPolicy(sess,
+                                             env,
+                                             network,
+                                             policy_layers=policy_layers,
+                                             value_layers=value_layers,
+                                             checkpoint=os.path.join(LOG_DIR, CHECKPOINT))
 
     sum_reward = 0
     observation = env.reset()

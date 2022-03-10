@@ -11,14 +11,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """Compute a streaming estimation of the mean of submitted tensors."""
 
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import tensorflow as tf
+import tf.compat.v1 as tf
 
 
 class StreamingMean(object):
@@ -53,9 +52,8 @@ class StreamingMean(object):
     # Add a batch dimension if necessary.
     if value.shape.ndims == self._sum.shape.ndims:
       value = value[None, ...]
-    return tf.group(
-        self._sum.assign_add(tf.reduce_sum(value, 0)),
-        self._count.assign_add(tf.shape(value)[0]))
+    return tf.group(self._sum.assign_add(tf.reduce_sum(value, 0)),
+                    self._count.assign_add(tf.shape(value)[0]))
 
   def clear(self):
     """Return the mean estimate and reset the streaming statistics."""

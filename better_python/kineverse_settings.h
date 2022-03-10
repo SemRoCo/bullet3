@@ -1,0 +1,3 @@
+#pragma once
+
+#define KINEVERSE_COLLISION_MARGIN 0.001
