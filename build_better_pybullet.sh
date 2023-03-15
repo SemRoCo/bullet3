@@ -1,11 +1,6 @@
 #!/bin/sh
 
-# if [ $# -ne 1 ]; then
-#     echo "Need directory to clone pybullet and pybind11 to"
-#     exit 0
-# fi
-
-# cd ../
+cd ../
 
 if [ ! -d "pybind11" ]; then
     git clone https://github.com/pybind/pybind11.git
@@ -21,16 +16,12 @@ if [ ! -d "pybind11" ]; then
     cd ../..
 fi
 
-if [ ! -d "bullet3" ]; then
-    # git clone https://github.com/ARoefer/bullet3.git --branch kineverse_new
+cd bullet3
 
-    # cd bullet3
-
-    if [ -z ${ROS_DISTRO} ] || [ ${ROS_DISTRO} = "noetic" ]; then
-        ./build_cmake_pybullet_3.8_double.sh Release
-    else
-        ./build_cmake_pybullet_2.7_double.sh Release
-    fi
-
-    echo 'export PYTHONPATH=${PYTHONPATH}':"${PWD}/build_cmake/better_python:${PWD}/examples/pybullet" >> ~/.bashrc
+if [ -z ${ROS_DISTRO} ] || [ ${ROS_DISTRO} = "noetic" ]; then
+    ./build_cmake_pybullet_3.8_double.sh Release
+else
+    ./build_cmake_pybullet_2.7_double.sh Release
 fi
+
+echo 'export PYTHONPATH=${PYTHONPATH}':"${PWD}/build_cmake/better_python:${PWD}/examples/pybullet" >> ~/.bashrc
