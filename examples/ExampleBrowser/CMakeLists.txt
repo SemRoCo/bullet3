@@ -407,13 +407,13 @@ SET(BulletExampleBrowser_SRCS
 
 
 
-ADD_EXECUTABLE(App_ExampleBrowser
-		main.cpp
-		ExampleEntries.cpp
-		ExampleEntries.h
-		${ExtendedTutorialsSources}
-		${BulletExampleBrowser_SRCS}
-)
+# ADD_EXECUTABLE(App_ExampleBrowser
+# 		main.cpp
+# 		ExampleEntries.cpp
+# 		ExampleEntries.h
+# 		${ExtendedTutorialsSources}
+# 		${BulletExampleBrowser_SRCS}
+# )
 
 FILE( MAKE_DIRECTORY "${PROJECT_BINARY_DIR}/data" )
 

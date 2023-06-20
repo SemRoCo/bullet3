@@ -5,6 +5,9 @@ INCLUDE_DIRECTORIES(
 		${BULLET_PHYSICS_SOURCE_DIR}/examples/ThirdPartyLibs
 		${BULLET_PHYSICS_SOURCE_DIR}/examples/ThirdPartyLibs/enet/include
 		${BULLET_PHYSICS_SOURCE_DIR}/examples/ThirdPartyLibs/clsocket/src
+		${BULLET_PHYSICS_SOURCE_DIR}/Extras
+        ${BULLET_PHYSICS_SOURCE_DIR}/Extras/VHACD/inc
+        ${BULLET_PHYSICS_SOURCE_DIR}/Extras/VHACD/public
   )
 
 
@@ -53,7 +56,7 @@ SET(RobotSimulator_SRCS
 		../../examples/SharedMemory/PhysicsServerCommandProcessor.cpp
 		../../examples/SharedMemory/PhysicsServerCommandProcessor.h
 		../../examples/SharedMemory/b3PluginManager.cpp
-		
+		../../Extras/VHACD/src/VHACD.cpp
 		../../examples/SharedMemory/PhysicsClientSharedMemory.cpp
 		../../examples/SharedMemory/PhysicsClientSharedMemory.h
 		../../examples/SharedMemory/PhysicsClientSharedMemory_C_API.cpp
@@ -171,20 +174,20 @@ ELSE(WIN32)
 ENDIF(WIN32)
 
 
-ADD_EXECUTABLE(App_TwoJoint  ${RobotSimulator_SRCS})
+# ADD_EXECUTABLE(App_TwoJoint  ${RobotSimulator_SRCS})
 
-SET_TARGET_PROPERTIES(App_TwoJoint PROPERTIES VERSION ${BULLET_VERSION})
-SET_TARGET_PROPERTIES(App_TwoJoint PROPERTIES DEBUG_POSTFIX "_d")
-
-
-IF(WIN32)
-	IF(BUILD_ENET OR BUILD_CLSOCKET)
-		TARGET_LINK_LIBRARIES(App_TwoJoint ws2_32 )
-	ENDIF(BUILD_ENET OR BUILD_CLSOCKET)
-ENDIF(WIN32)
+# SET_TARGET_PROPERTIES(App_TwoJoint PROPERTIES VERSION ${BULLET_VERSION})
+# SET_TARGET_PROPERTIES(App_TwoJoint PROPERTIES DEBUG_POSTFIX "_d")
 
 
+# IF(WIN32)
+# 	IF(BUILD_ENET OR BUILD_CLSOCKET)
+# 		TARGET_LINK_LIBRARIES(App_TwoJoint ws2_32 )
+# 	ENDIF(BUILD_ENET OR BUILD_CLSOCKET)
+# ENDIF(WIN32)
 
-TARGET_LINK_LIBRARIES(App_TwoJoint BulletExampleBrowserLib BulletFileLoader BulletWorldImporter BulletSoftBody BulletDynamics BulletCollision BulletInverseDynamicsUtils BulletInverseDynamics LinearMath OpenGLWindow gwen BussIK Bullet3Common)
+
+
+# TARGET_LINK_LIBRARIES(App_TwoJoint BulletExampleBrowserLib BulletFileLoader BulletWorldImporter BulletSoftBody BulletDynamics BulletCollision BulletInverseDynamicsUtils BulletInverseDynamics LinearMath OpenGLWindow gwen BussIK Bullet3Common)
 
 

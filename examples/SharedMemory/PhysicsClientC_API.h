@@ -731,14 +731,14 @@ extern "C"
 	B3_SHARED_API void b3CalculateVelocityQuaternion(const double startQuat[/*4*/], const double endQuat[/*4*/], double deltaTime, double angVelOut[/*3*/]);
 	B3_SHARED_API void b3RotateVector(const double quat[/*4*/], const double vec[/*3*/], double vecOut[/*3*/]);
 
-#ifdef BT_ENABLE_VHACD
+// #ifdef BT_ENABLE_VHACD
 	B3_SHARED_API void b3VHACD(const char* fileNameInput, const char* fileNameOutput, const char* fileNameLogging,
 		double concavity, double alpha, double beta, double gamma, double minVolumePerCH, int resolution,
 		int maxNumVerticesPerCH, int depth, int planeDownsampling, int convexhullDownsampling,
 		int pca, int mode, int convexhullApproximation);
 
 
-#endif
+// #endif
 
 #ifndef SKIP_SOFT_BODY_MULTI_BODY_DYNAMICS_WORLD
 B3_SHARED_API   b3SharedMemoryCommandHandle b3ApplyNodeForceCommand(b3PhysicsClientHandle physClient, int bodyUniqueId, int nodeIndex, const float force[/*3*/]);

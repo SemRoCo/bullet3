@@ -4,6 +4,7 @@
 #include <pybind11/stl.h>
 
 #include <btBulletCollisionCommon.h>
+#include "../examples/SharedMemory/PhysicsClientC_API.h"
 
 #include <stdarg.h>  // For va_start, etc.
 #include <memory>    // For std::unique_ptr
@@ -435,6 +436,25 @@ PYBIND11_MODULE(betterpybullet, m) {
     }, "Returns a tuple consisting of mesh file "
        "and scale vector for a given shape, "
        "if the shape is a mesh.", py::arg("shape"));
+
+    // m.def("vhacd", &b3VHACD,
+    //       "vhacd",
+    //       py::arg("fileNameIn"), 
+    //       py::arg("fileNameOut"), 
+    //       py::arg("fileNameLogging") = 0,
+    //       py::arg("concavity") = -1,
+    //       py::arg("alpha") = -1,
+    //       py::arg("beta") = -1,
+    //       py::arg("gamma") = -1,
+    //       py::arg("minVolumePerCH") = -1,
+    //       py::arg("resolution") = -1,
+    //       py::arg("maxNumVerticesPerCH") = -1,
+    //       py::arg("depth") = -1,
+    //       py::arg("planeDownsampling") = -1,
+    //       py::arg("convexhullDownsampling") = -1,
+    //       py::arg("pca") = -1,
+    //       py::arg("mode") = -1,
+    //       py::arg("convexhullApproximation") = -1);
 
 // COLLISION OBJECTS
 

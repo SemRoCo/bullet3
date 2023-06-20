@@ -6468,7 +6468,7 @@ static PyObject* pybullet_setAdditionalSearchPath(PyObject* self, PyObject* args
 	return Py_None;
 }
 
-#ifdef BT_ENABLE_VHACD
+// #ifdef BT_ENABLE_VHACD
 static PyObject* pybullet_vhacd(PyObject* self, PyObject* args, PyObject* keywds)
 {
 	char* fileNameIn = 0;
@@ -6514,7 +6514,7 @@ static PyObject* pybullet_vhacd(PyObject* self, PyObject* args, PyObject* keywds
 	Py_INCREF(Py_None);
 	return Py_None;
 }
-#endif//BT_ENABLE_VHACD
+// #endif//BT_ENABLE_VHACD
 
 
 static PyObject* pybullet_setTimeOut(PyObject* self, PyObject* args, PyObject* keywds)
@@ -12909,10 +12909,10 @@ static PyMethodDef SpamMethods[] = {
 	{"setTimeOut", (PyCFunction)pybullet_setTimeOut, METH_VARARGS | METH_KEYWORDS,
 	 "Set the timeOut in seconds, used for most of the API calls."},
 
-#ifdef BT_ENABLE_VHACD
+// #ifdef BT_ENABLE_VHACD
 	{"vhacd", (PyCFunction)pybullet_vhacd, METH_VARARGS | METH_KEYWORDS,
 	 "Compute volume hierarchical convex decomposition of an OBJ file."},
-#endif //BT_ENABLE_VHACD
+// #endif //BT_ENABLE_VHACD
 	{"setAdditionalSearchPath", (PyCFunction)pybullet_setAdditionalSearchPath,
 	 METH_VARARGS | METH_KEYWORDS,
 	 "Set an additional search path, used to load URDF/SDF files."},

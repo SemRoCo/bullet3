@@ -32,7 +32,8 @@
 #include <stdlib.h>
 #endif  // _CRTDBG_MAP_ALLOC
 
-#include "VHACD.h"
+// #include "VHACD.h"
+#include "../../public/VHACD.h"
 
 using namespace VHACD;
 using namespace std;

@@ -1,6 +1,15 @@
 IF(BUILD_PYBULLET)
     FIND_PACKAGE(pybind11 REQUIRED)
-    INCLUDE_DIRECTORIES( ${BULLET_PHYSICS_SOURCE_DIR}/src ${BULLET_PHYSICS_SOURCE_DIR}/examples/ThirdPartyLibs ${BULLET_PHYSICS_SOURCE_DIR}/examples/ ${PYTHON_INCLUDE_DIR})
+    INCLUDE_DIRECTORIES( 
+        ${BULLET_PHYSICS_SOURCE_DIR}/src/
+        ${BULLET_PHYSICS_SOURCE_DIR}/examples/ThirdPartyLibs/
+        ${BULLET_PHYSICS_SOURCE_DIR}/examples/ 
+        ${BULLET_PHYSICS_SOURCE_DIR}/examples/SharedMemory/ 
+        ${BULLET_PHYSICS_SOURCE_DIR}/Extras/ 
+        ${BULLET_PHYSICS_SOURCE_DIR}/Extras/VHACD/inc/ 
+        ${BULLET_PHYSICS_SOURCE_DIR}/Extras/VHACD/public/
+        ${PYTHON_INCLUDE_DIR}
+    )
 
     add_library(kineverse SHARED
                 kineverse_utils.cpp
@@ -13,11 +22,13 @@ IF(BUILD_PYBULLET)
                 ../examples/ThirdPartyLibs/Wavefront/tiny_obj_loader.cpp
                 ../examples/ThirdPartyLibs/tinyxml2/tinyxml2.cpp
                 ../examples/Utils/b3ResourcePath.cpp
+                ../Extras/VHACD/src/VHACD.cpp
+                ../examples/SharedMemory/PhysicsClientC_API.cpp
                 ../examples/Importers/ImportColladaDemo/LoadMeshFromCollada.cpp)
-    target_link_libraries(kineverse BulletCollision BulletDynamics Bullet3Common LinearMath)
+    target_link_libraries(kineverse PUBLIC BulletCollision BulletDynamics Bullet3Common LinearMath)
 
-    add_executable(kineverse_test kineverse_test.cpp)
-    target_link_libraries(kineverse_test kineverse)
+#     add_executable(kineverse_test kineverse_test.cpp)
+#     target_link_libraries(kineverse_test kineverse)
 
     # add_executable(kineverse_test2 kineverse_test2.cpp)
     # target_link_libraries(kineverse_test2 kineverse)
