@@ -23,7 +23,12 @@ IF(BUILD_PYBULLET)
                 ../examples/ThirdPartyLibs/tinyxml2/tinyxml2.cpp
                 ../examples/Utils/b3ResourcePath.cpp
                 ../Extras/VHACD/src/VHACD.cpp
+                ../Extras/VHACD/src/vhacdMesh.cpp
+                ../Extras/VHACD/src/vhacdICHull.cpp
+                ../Extras/VHACD/src/vhacdManifoldMesh.cpp
+                ../Extras/VHACD/src/vhacdVolume.cpp
                 ../examples/SharedMemory/PhysicsClientC_API.cpp
+                ../examples/Utils/b3Clock.cpp
                 ../examples/Importers/ImportColladaDemo/LoadMeshFromCollada.cpp)
     target_link_libraries(kineverse PUBLIC BulletCollision BulletDynamics Bullet3Common LinearMath)
 
