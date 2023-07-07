@@ -570,6 +570,7 @@ PYBIND11_MODULE(betterpybullet, m) {
     py::class_<KineverseCollisionObject, CollisionObjectPtr> collision_object(m, "CollisionObject");
 
     collision_object.def(py::init<>())
+        .def(py::init<py::object&>())
         .def("set_contact_stiffness_and_damping", &btCollisionObject::setContactStiffnessAndDamping)
         .def("set_anisotropic_friction", &btCollisionObject::setAnisotropicFriction)
         .def("has_anisotropic_friction", &btCollisionObject::hasAnisotropicFriction)
@@ -579,12 +580,52 @@ PYBIND11_MODULE(betterpybullet, m) {
         .def("check_collsion_override", &btCollisionObject::checkCollideWithOverride)
         .def("activate", &btCollisionObject::activate)
         .def("force_activation_state", &btCollisionObject::forceActivationState)
+        .def("__str__", [](const KineverseCollisionObject& obj) {
+            return py::str(obj.name);
+        })
+        .def("__repr__", [](const KineverseCollisionObject& obj) {
+            return py::str(obj.name);
+        })
+        .def("__eq__", [](const KineverseCollisionObject& self, const KineverseCollisionObject& other) {
+            return self.name.equal(other.name);
+        })
+        .def("__ne__", [](const KineverseCollisionObject& self, const KineverseCollisionObject& other) {
+            return self.name.not_equal(other.name);
+        })
+        .def("__le__", [](const KineverseCollisionObject& self, const KineverseCollisionObject& other) {
+            return self.name <= other.name;
+        })
+        .def("__ge__", [](const KineverseCollisionObject& self, const KineverseCollisionObject& other) {
+            return self.name >= other.name;
+        })
+        .def("__lt__", [](const KineverseCollisionObject& self, const KineverseCollisionObject& other) {
+            return self.name < other.name;
+        })
+        .def("__gt__", [](const KineverseCollisionObject& self, const KineverseCollisionObject& other) {
+            return self.name > other.name;
+        })
+        .def("__hash__", [](const KineverseCollisionObject& self) {
+            return py::hash(self.name);
+        })
         .def_property("transform", (btTransform& (btCollisionObject::*)()) &btCollisionObject::getWorldTransform, &btCollisionObject::setWorldTransform)
         .def_property("np_transform", [](const KineverseCollisionObject& o) {
             return to_np(o.getWorldTransform());
         }, [](KineverseCollisionObject& o, py::array_t<btScalar> np_pose) {
             o.setWorldTransform(from_np<btTransform>(np_pose));
         })
+        .def("compound_transform", [](const KineverseCollisionObject& self, int shape_idx) {
+            py::module geometry_msgs = py::module::import("geometry_msgs.msg");
+            std::shared_ptr<btCompoundShape> shape = std::dynamic_pointer_cast<btCompoundShape>(self.getCollisionShape());
+            btTransform o_T_geo = shape->getChildTransform(shape_idx);
+            btTransform map_T_o = self.getWorldTransform();
+            btTransform map_T_geo = map_T_o * o_T_geo;
+            btVector3& p = map_T_geo.getOrigin();
+            btQuaternion q = map_T_geo.getRotation();
+
+            py::object position = geometry_msgs.attr("Point")(p.x(), p.y(), p.z());
+            py::object orientation = geometry_msgs.attr("Quaternion")(q.x(), q.y(), q.z(), q.w());
+            return geometry_msgs.attr("Pose")(position, orientation);
+        }, py::arg("shape_idx") = 0)
         .def_property_readonly("np_inv_transform", [](const KineverseCollisionObject& o) {
             return to_np(o.getWorldTransform().inverse());
         })
@@ -594,6 +635,7 @@ PYBIND11_MODULE(betterpybullet, m) {
         .def_property("collision_shape", &KineverseCollisionObject::getCollisionShape, 
                                          (void (KineverseCollisionObject:: *)(ShapePtr)) &KineverseCollisionObject::setCollisionShape)
         .def_property("friction",          &btCollisionObject::getFriction, &btCollisionObject::setFriction)
+        .def_readwrite("name", &KineverseCollisionObject::name)
         .def_property("restitution",       &btCollisionObject::getRestitution, &btCollisionObject::setRestitution)
         .def_property("rolling_friction",  &btCollisionObject::getRollingFriction, &btCollisionObject::setRollingFriction)
         .def_property("spinning_friction", &btCollisionObject::getSpinningFriction, &btCollisionObject::setSpinningFriction)
