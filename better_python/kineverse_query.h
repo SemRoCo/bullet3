@@ -59,7 +59,7 @@ struct ContactPair : public btCollisionWorld::ContactResultCallback {
     std::vector<ContactPoint<TPoint, TVector>> m_points;
 };
 
-template<typename TPoint, typename TVector>
+template<typename TPoint, typename TVector> //contactpair but sorted
 struct ClosestPair : public ContactPair<TPoint, TVector> {
     ClosestPair() : ContactPair<TPoint, TVector>() {}
 

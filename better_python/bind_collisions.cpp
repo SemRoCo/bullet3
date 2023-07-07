@@ -24,6 +24,14 @@ namespace py = pybind11;
 
 class np_point : public py::array_t<btScalar> {
  public:
+    np_point()
+    : py::array_t<btScalar>({4, 1}) {
+        auto r = mutable_unchecked<2>();
+        r(0, 0) = 0;
+        r(1, 0) = 0;
+        r(2, 0) = 0;
+        r(3, 0) = 1;
+    } 
     np_point(const btVector3& vec)
     : py::array_t<btScalar>({4, 1}) {
         auto r = mutable_unchecked<2>();
@@ -31,11 +39,19 @@ class np_point : public py::array_t<btScalar> {
         r(1, 0) = vec.getY();
         r(2, 0) = vec.getZ();
         r(3, 0) = 1;
-    }
+    }  
 };
 
 class np_vector : public py::array_t<btScalar> {
  public:
+    np_vector()
+    : py::array_t<btScalar>({4, 1}) {
+        auto r = mutable_unchecked<2>();
+        r(0, 0) = 0;
+        r(1, 0) = 0;
+        r(2, 0) = 0;
+        r(3, 0) = 0;
+    }
     np_vector(const btVector3& vec)
     : py::array_t<btScalar>({4, 1}) {
         auto r = mutable_unchecked<2>();
@@ -131,6 +147,10 @@ using npContactPoint = ContactPoint<np_point, np_vector>;
 using npContactPair  = ContactPair<np_point, np_vector>;
 using npClosestPair  = ClosestPair<np_point, np_vector>;
 
+using btContactPoint = ContactPoint<btVector3, btVector3>;
+using btContactPair  = ContactPair<btVector3, btVector3>;
+using btClosestPair  = ClosestPair<btVector3, btVector3>;
+
 py::list py_get_closest(KineverseWorld& world, 
                         CollisionObjectPtr obj, btScalar max_distance = 1.0) {
     PairAccumulator<npClosestPair> pair(std::const_pointer_cast<const KineverseCollisionObject>(obj), world.get_object_ptr_map());
@@ -225,6 +245,94 @@ py::dict py_get_closest_filtered_POD_batch(KineverseWorld& world, py::dict query
         CollisionObjectPtr obj = item.first.cast<CollisionObjectPtr>();
         py::list query_list = item.second.cast<py::list>();
         out[item.first] = py_get_closest_filtered_POD(world, obj, query_list);
+    }
+    return out;
+}
+
+std::vector<btClosestPair> py_check_collision(KineverseWorld& world, CollisionObjectPtr obj, CollisionObjectPtr obj2, btScalar max_distance = 1.0) {
+    PairAccumulator<btClosestPair> pair(std::const_pointer_cast<const KineverseCollisionObject>(obj), world.get_object_ptr_map());
+    pair.m_closestDistanceThreshold = max_distance;
+
+    world.contactPairTest(obj.get(), obj2.get(), pair);
+
+    std::vector<btClosestPair> out;
+    out.reserve(pair.size());
+    for (auto kv : pair.m_obj_map) {
+        out.push_back(kv.second);
+    }
+    return out;
+}
+
+// input:  Dict[Tuple[CollisionObjectPtr, CollisionObjectPtr], float]
+// output: List[Collision]
+struct Collision {
+
+    Collision(btContactPoint contact_point, 
+        std::shared_ptr<const KineverseCollisionObject> obj_a, std::shared_ptr<const KineverseCollisionObject> obj_b) 
+    : m_a_P_pa(np_point(contact_point.m_pointOnA))
+    , m_b_P_pb(np_point(contact_point.m_pointOnB))
+    , m_world_V_n(np_vector(contact_point.m_normalWorldB))
+    , m_contact_distance(contact_point.m_distance)
+    , m_obj_a(obj_a)
+    , m_obj_b(obj_b)
+    {
+        btTransform world_T_a = m_obj_a->getWorldTransform();
+        m_map_P_pa = np_point(world_T_a * contact_point.m_pointOnA);
+
+        btTransform world_T_b = m_obj_b->getWorldTransform();
+        m_map_P_pb = np_point(world_T_b * contact_point.m_pointOnB);
+
+    }
+
+    Collision(np_point a_P_pa, np_point b_P_pb, np_vector world_V_n, btScalar contact_distance, 
+        std::shared_ptr<const KineverseCollisionObject> obj_a, std::shared_ptr<const KineverseCollisionObject> obj_b, 
+        np_point map_P_pa, np_point map_P_pb) 
+    : m_a_P_pa(a_P_pa)
+    , m_b_P_pb(b_P_pb)
+    , m_world_V_n(world_V_n)
+    , m_contact_distance(contact_distance)
+    , m_obj_a(obj_a)
+    , m_obj_b(obj_b)
+    , m_map_P_pb(map_P_pb)
+    , m_map_P_pa(map_P_pa) {}
+
+    np_point m_a_P_pa;
+    np_point m_b_P_pb;
+    np_vector m_world_V_n;
+    btScalar m_contact_distance;
+    std::shared_ptr<const KineverseCollisionObject> m_obj_a;
+    std::shared_ptr<const KineverseCollisionObject> m_obj_b;
+    np_point m_map_P_pa;
+    np_point m_map_P_pb;
+    py::str link_a;
+    py::str link_b;
+    py::str original_link_a;
+    py::str original_link_b;
+    bool is_external;
+    np_point new_a_P_pa;
+    np_point new_b_P_pb;
+    np_vector new_b_V_n;
+
+    Collision reverse(){
+        return Collision(m_a_P_pa, m_b_P_pb, m_world_V_n, m_contact_distance, m_obj_a, m_obj_b, m_map_P_pa, m_map_P_pb);
+    }
+
+};
+
+py::list py_get_closest_filtered_map_batch(KineverseWorld& world, py::dict query) {
+    py::list out;
+
+    for (auto item : query) {
+        py::tuple key = item.first.cast<py::tuple>();
+        CollisionObjectPtr obj_a = key[0].cast<CollisionObjectPtr>();
+        CollisionObjectPtr obj_b = key[1].cast<CollisionObjectPtr>();
+        std::vector<btClosestPair> closest_pair_list = py_check_collision(world, obj_a, obj_b, item.second.cast<btScalar>());
+        for (auto closest_pair : closest_pair_list) {
+            for (auto contact_point : closest_pair.m_points) {
+                Collision c(contact_point, obj_a, obj_b);
+                out.append(c);
+            }
+        }
     }
     return out;
 }
@@ -412,6 +520,7 @@ PYBIND11_MODULE(betterpybullet, m) {
         .def("inv", &btTransform::inverse)
         .def("to_np", &to_np<btTransform>)
         .def_static("identity", &btTransform::getIdentity)
+        .def_static("from_np", from_np<btTransform>)
         .def("__repr__", (std::string (*)(const btTransform&)) &toString)
         .def(py::self *  btVector3())
         .def(py::self *  btQuaternion())
@@ -634,6 +743,7 @@ PYBIND11_MODULE(betterpybullet, m) {
         .def("get_closest_filtered_batch", &py_get_closest_filtered_batch, "Batches the checks for closest objects w.r.t to a set of given objects.", py::arg("query"))
         .def("get_closest_filtered_POD", &py_get_closest_filtered_POD, "Performs a distance check of the first given object against a list of other objects.", py::arg("obj_a"), py::arg("object_queries"))
         .def("get_closest_filtered_POD_batch", &py_get_closest_filtered_POD_batch, "Batches the checks for closest objects w.r.t to a set of given objects.", py::arg("query"))
+        .def("get_closest_filtered_map_batch", &py_get_closest_filtered_map_batch, "Batches the checks for closest objects w.r.t to a set of given objects.", py::arg("query"))
         .def("overlap_aabb", &KineverseWorld::overlap_aabb, py::arg("aabb_min"), py::arg("aabb_max"))
         .def("update_single_aabb", &btCollisionWorld::updateSingleAabb)
         .def("update_aabbs", &btCollisionWorld::updateAabbs)
@@ -671,6 +781,25 @@ PYBIND11_MODULE(betterpybullet, m) {
         .def_readonly("points", &npContactPair::m_points);
 
     py::class_<npClosestPair, npContactPair>(m, "ClosestPair");
+
+    py::class_<Collision>(m, "Collision")
+        .def("reverse", &Collision::reverse)
+        .def_readonly("a_P_pa", &Collision::m_a_P_pa)
+        .def_readonly("b_P_pb", &Collision::m_b_P_pb)
+        .def_readonly("world_V_n", &Collision::m_world_V_n)
+        .def_readonly("obj_a", &Collision::m_obj_a)
+        .def_readonly("obj_b", &Collision::m_obj_b)
+        .def_readonly("map_P_pa", &Collision::m_map_P_pa)
+        .def_readonly("map_P_pb", &Collision::m_map_P_pb)
+        .def_readonly("link_a", &Collision::link_a)
+        .def_readonly("link_b", &Collision::link_b)
+        .def_readonly("original_link_a", &Collision::original_link_a)
+        .def_readonly("original_link_b", &Collision::original_link_b)
+        .def_readonly("is_external", &Collision::is_external)
+        .def_readonly("new_a_P_pa", &Collision::new_a_P_pa)
+        .def_readonly("new_b_P_pb", &Collision::new_b_P_pb)
+        .def_readonly("new_b_V_n", &Collision::new_b_V_n)
+        .def_readonly("contact_distance", &Collision::m_contact_distance);
 
 //////// SHAPES
 
