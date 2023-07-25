@@ -25,40 +25,40 @@ namespace py = pybind11;
 class np_point : public py::array_t<btScalar> {
  public:
     np_point()
-    : py::array_t<btScalar>({4, 1}) {
-        auto r = mutable_unchecked<2>();
-        r(0, 0) = 0;
-        r(1, 0) = 0;
-        r(2, 0) = 0;
-        r(3, 0) = 1;
+    : py::array_t<btScalar>({4}) {
+        auto r = mutable_unchecked<1>();
+        r(0) = 0;
+        r(1) = 0;
+        r(2) = 0;
+        r(3) = 1;
     } 
     np_point(const btVector3& vec)
-    : py::array_t<btScalar>({4, 1}) {
-        auto r = mutable_unchecked<2>();
-        r(0, 0) = vec.getX();
-        r(1, 0) = vec.getY();
-        r(2, 0) = vec.getZ();
-        r(3, 0) = 1;
+    : py::array_t<btScalar>({4}) {
+        auto r = mutable_unchecked<1>();
+        r(0) = vec.getX();
+        r(1) = vec.getY();
+        r(2) = vec.getZ();
+        r(3) = 1;
     }  
 };
 
 class np_vector : public py::array_t<btScalar> {
  public:
     np_vector()
-    : py::array_t<btScalar>({4, 1}) {
-        auto r = mutable_unchecked<2>();
-        r(0, 0) = 0;
-        r(1, 0) = 0;
-        r(2, 0) = 0;
-        r(3, 0) = 0;
+    : py::array_t<btScalar>({4}) {
+        auto r = mutable_unchecked<1>();
+        r(0) = 0;
+        r(1) = 0;
+        r(2) = 0;
+        r(3) = 0;
     }
     np_vector(const btVector3& vec)
-    : py::array_t<btScalar>({4, 1}) {
-        auto r = mutable_unchecked<2>();
-        r(0, 0) = vec.getX();
-        r(1, 0) = vec.getY();
-        r(2, 0) = vec.getZ();
-        r(3, 0) = 0;
+    : py::array_t<btScalar>({4}) {
+        auto r = mutable_unchecked<1>();
+        r(0) = vec.getX();
+        r(1) = vec.getY();
+        r(2) = vec.getZ();
+        r(3) = 0;
     }
 };
 
