@@ -345,6 +345,7 @@ PYBIND11_MODULE(betterpybullet, m) {
     m.def("get_version", []() {
         return string_format("Better PyBullet. Built: %s %s", __DATE__, __TIME__);
     });
+    m.attr("__version__") = "1.0.0";
 
 // VECTORIZATION
 
