@@ -13,7 +13,7 @@ if [ -e CMakeCache.txt ]; then
 fi
 mkdir -p build_cmake
 cd build_cmake
-cmake -DBUILD_PYBULLET=ON -DBUILD_PYBULLET_NUMPY=ON -DBT_ENABLE_VHACD=TRUE -DUSE_DOUBLE_PRECISION=ON -DBT_USE_EGL=ON -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DPYTHON_EXECUTABLE=/usr/bin/python3 -DPYTHON_INCLUDE_DIR=/usr/include/python3.8 -DPYTHON_LIBRARY=/usr/lib/x86_64-linux-gnu/libpython3.8.so .. || exit 1
+cmake -DBUILD_PYBULLET=ON -DBUILD_PYBULLET_NUMPY=ON -DBT_ENABLE_VHACD=TRUE -DUSE_DOUBLE_PRECISION=ON -DBT_USE_EGL=ON -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DPYTHON_EXECUTABLE=/usr/bin/python3 -DPYTHON_INCLUDE_DIR=/usr/include/python3.12 -DPYTHON_LIBRARY=/usr/lib/x86_64-linux-gnu/libpython3.12.so .. || exit 1
 make -j $(command nproc 2>/dev/null || echo 12) || exit 1
 cd examples
 cd pybullet
