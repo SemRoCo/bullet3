@@ -636,6 +636,6 @@ setup(
         'Topic :: Scientific/Engineering :: Artificial Intelligence :: Simulation',
         'Framework :: Robot Framework'
     ],
-    python_requires='>=3.6',  # pybind11 requires Python 3.6+
+    python_requires='>=3.8',  # pybind11 requires Python 3.6+
     zip_safe=False,
 )

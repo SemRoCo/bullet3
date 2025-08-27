@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <unordered_set>
+#include <stdexcept>
 
 #include <btBulletCollisionCommon.h>
 #include "../examples/Importers/ImportColladaDemo/LoadMeshFromCollada.h"
