@@ -613,7 +613,7 @@ if 'BT_USE_EGL' in EGL_CXX_FLAGS:
 
 setup(
     name='betterpybullet',
-    version='0.1.0',
+    version='0.2.0',
     description=
     '',
     long_description=
