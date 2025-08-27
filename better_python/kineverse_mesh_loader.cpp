@@ -3,10 +3,10 @@
 #include <unordered_set>
 
 #include <btBulletCollisionCommon.h>
-#include <Importers/ImportColladaDemo/LoadMeshFromCollada.h>
-#include <Utils/b3BulletDefaultFileIO.h>
+#include "../examples/Importers/ImportColladaDemo/LoadMeshFromCollada.h"
+#include "../examples/Utils/b3BulletDefaultFileIO.h"
 
-#include <OpenGLWindow/GLInstanceGraphicsShape.h>
+#include "../examples/OpenGLWindow/GLInstanceGraphicsShape.h"
 
 #include "kineverse_mesh_loader.h"
 #include "kineverse_compound_shape.h"
