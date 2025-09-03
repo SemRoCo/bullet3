@@ -18,8 +18,10 @@ if [ -z ${ROS_DISTRO} ] || [ ${ROS_DISTRO} = "jazzy" ]; then
     ./build_cmake_pybullet_3.12_double.sh Release
 elif [ "${ROS_DISTRO}" = "humble" ]; then
     ./build_cmake_pybullet_3.10_double.sh Release
+elif [ "${ROS_DISTRO}" = "noetic" ]; then
+    ./build_cmake_pybullet_3.8_double.sh Release
 else
-    echo "Only ROS distributions 'jazzy' and 'humble' are supported"
+    echo "Only ROS distributions 'jazzy', 'humble' and 'noetic' are supported"
 fi
 
 echo 'export PYTHONPATH=${PYTHONPATH}':"${PWD}/build_cmake/better_python:${PWD}/examples/pybullet" >> ~/.bashrc

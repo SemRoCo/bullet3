@@ -613,12 +613,12 @@ if 'BT_USE_EGL' in EGL_CXX_FLAGS:
 
 setup(
     name='betterpybullet',
-    version='0.2.0',
+    version='0.1.0',
     description=
     '',
     long_description=
     '',
-    url='https://github.com/bulletphysics/bullet3',
+    url='https://github.com/SemRoCo/bullet3',
     author='',
     author_email='',
     license='zlib',
@@ -633,7 +633,12 @@ setup(
         'License :: OSI Approved :: zlib/libpng License',
         'Operating System :: POSIX :: Linux',
         'Programming Language :: Python :: 3.8',
-        'Topic :: Scientific/Engineering :: Artificial Intelligence :: Simulation',
+        'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
+        'Programming Language :: Python :: 3.11',
+        'Programming Language :: Python :: 3.12',
+        'Topic :: Scientific/Engineering :: Artificial Intelligence',
+        "Topic :: Games/Entertainment :: Simulation",
         'Framework :: Robot Framework'
     ],
     python_requires='>=3.8',  # pybind11 requires Python 3.6+
