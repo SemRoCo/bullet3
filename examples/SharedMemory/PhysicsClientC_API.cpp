@@ -6329,10 +6329,11 @@ B3_SHARED_API void b3GetAxisDifferenceQuaternion(const double startQuat[/*4*/], 
 }
 
 // #ifdef BT_ENABLE_VHACD
-#include "VHACD.h"
+#include "../../Extras/VHACD/public/VHACD.h"
+#include "../../Extras/VHACD/test/src/main_vhacd.cpp"
 #include <string>
 
-int main_vhacd_ext(const std::string& fileNameIn, const std::string& fileNameOut, const std::string& fileNameLog, VHACD::IVHACD::Parameters& paramsVHACD);
+// int main_vhacd_ext(const std::string& fileNameIn, const std::string& fileNameOut, const std::string& fileNameLog, VHACD::IVHACD::Parameters& paramsVHACD);
 
 B3_SHARED_API void b3VHACD(const char* fileNameInput, const char* fileNameOutput, const char* fileNameLogging,
 	double concavity, double alpha, double beta, double gamma, double minVolumePerCH, int resolution,

@@ -454,7 +454,7 @@ ELSE()
 		OPTION(INSTALL_LIBS "Set when you want to install libraries" ON)
 	ELSE()
 #by default, don't enable the 'INSTALL' option for Xcode and MSVC projectfiles
-		OPTION(INSTALL_LIBS "Set when you want to install libraries" OFF)
+		OPTION(INSTALL_LIBS "Set when you want to install libraries" ON)
 	ENDIF()
 ENDIF()
 

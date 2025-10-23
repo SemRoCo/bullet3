@@ -51,4 +51,8 @@ IF(BUILD_PYBULLET)
     PYBIND11_ADD_MODULE(betterpybullet SHARED ${bpb_SRCS} ${Root_HDRS})
     TARGET_LINK_LIBRARIES(betterpybullet PRIVATE kineverse)# BulletCollision BulletDynamics Bullet3Common LinearMath)
 
+    SET(PYTHON_SITE_PACKAGES lib/python${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}/site-packages CACHE PATH "Python install path")
+    INSTALL(TARGETS kineverse DESTINATION ${PYTHON_SITE_PACKAGES})
+    INSTALL(TARGETS betterpybullet DESTINATION .)
+
 ENDIF(BUILD_PYBULLET)
