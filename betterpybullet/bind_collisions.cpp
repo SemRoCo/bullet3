@@ -340,7 +340,7 @@ py::list py_get_closest_filtered_map_batch(KineverseWorld& world, py::dict query
 using ShapePtr = std::shared_ptr<btCollisionShape>;
 
 
-PYBIND11_MODULE(betterpybullet, m) {
+PYBIND11_MODULE(_betterpybullet, m) {
     m.doc() = "Attempt at exposing bullet's collision functionality.";
     m.def("get_version", []() {
         return string_format("Better PyBullet. Built: %s %s", __DATE__, __TIME__);

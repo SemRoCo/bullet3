@@ -11,13 +11,21 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "betterpybullet"
 version = "0.1.0"
-
-[tool.scikit-build]
-cmake.args = [
-    "-DBUILD_PYBULLET=ON",
-    "-DBUILD_PYBULLET_NUMPY=ON",
-    "-DBT_ENABLE_VHACD=TRUE",
-    "-DUSE_DOUBLE_PRECISION=ON",
-    "-DBT_USE_EGL=ON",
-    "-DCMAKE_BUILD_TYPE=Release"
+description = ''
+license = 'zlib'
+license-files = ['LICENSE.txt']
+keywords = [
+    'physics simulation', 'robotics',
+    'collision detection', 'opengl'
+]
+classifiers = [
+    'Operating System :: POSIX :: Linux',
+    'Programming Language :: Python :: 3.8',
+    'Programming Language :: Python :: 3.9',
+    'Programming Language :: Python :: 3.10',
+    'Programming Language :: Python :: 3.11',
+    'Programming Language :: Python :: 3.12',
+    'Topic :: Scientific/Engineering :: Artificial Intelligence',
+    "Topic :: Games/Entertainment :: Simulation",
+    'Framework :: Robot Framework'
 ]

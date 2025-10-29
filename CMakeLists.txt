@@ -347,7 +347,7 @@ IF(BUILD_PYBULLET)
 	# python library should exactly match that of the interpreter
 	# the following can result in fatal error if you don't have the right python configuration
 	FIND_PACKAGE(PythonLibs ${PYTHON_VERSION_STRING} EXACT)
-	SUBDIRS(better_python)
+	SUBDIRS(betterpybullet)
 ENDIF(BUILD_PYBULLET)
 
 OPTION(BUILD_ENET "Set when you want to build apps with enet UDP networking support" ON)
@@ -454,7 +454,7 @@ ELSE()
 		OPTION(INSTALL_LIBS "Set when you want to install libraries" ON)
 	ELSE()
 #by default, don't enable the 'INSTALL' option for Xcode and MSVC projectfiles
-		OPTION(INSTALL_LIBS "Set when you want to install libraries" ON)
+		OPTION(INSTALL_LIBS "Set when you want to install libraries" OFF)
 	ENDIF()
 ENDIF()
 
