@@ -72,6 +72,7 @@ if (BUILD_SHARED_LIBS)
   endif()
 endif()
 
+SET_TARGET_PROPERTIES(OpenGLWindow PROPERTIES INSTALL_RPATH $ORIGIN)
 #target_link_libraries(OpenGLWindow ${OPENGL_gl_LIBRARY})
 
 INSTALL(TARGETS OpenGLWindow

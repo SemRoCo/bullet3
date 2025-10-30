@@ -37,6 +37,7 @@ SET(ConvexDecomposition_HDRS
 ADD_LIBRARY(ConvexDecomposition ${ConvexDecomposition_SRCS} ${ConvexDecomposition_HDRS})
 SET_TARGET_PROPERTIES(ConvexDecomposition PROPERTIES VERSION ${BULLET_VERSION})
 SET_TARGET_PROPERTIES(ConvexDecomposition PROPERTIES SOVERSION ${BULLET_VERSION})
+SET_TARGET_PROPERTIES(ConvexDecomposition PROPERTIES INSTALL_RPATH $ORIGIN)
 
 IF (BUILD_SHARED_LIBS)
   TARGET_LINK_LIBRARIES(ConvexDecomposition BulletCollision LinearMath)
