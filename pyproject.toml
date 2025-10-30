@@ -10,9 +10,8 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "betterpybullet"
 version = "0.1.0"
+dynamic = ["license"]
 description = ''
-license = 'zlib'
-license-files = ['LICENSE.txt']
 keywords = [
     'physics simulation', 'robotics',
     'collision detection', 'opengl'

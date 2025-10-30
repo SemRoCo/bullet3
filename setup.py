@@ -7,6 +7,7 @@ setup(
     url='https://github.com/SemRoCo/bullet3',
     author='',
     author_email='',
+    license='zlib',
     platforms='any',
     packages=["betterpybullet"],
     package_dir={"": ""},
