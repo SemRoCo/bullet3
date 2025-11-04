@@ -243,6 +243,7 @@ ADD_LIBRARY(BulletRobotics ${BulletRobotics_SRCS})
 
 SET_TARGET_PROPERTIES(BulletRobotics PROPERTIES VERSION ${BULLET_VERSION})
 SET_TARGET_PROPERTIES(BulletRobotics PROPERTIES SOVERSION ${BULLET_VERSION})
+SET_TARGET_PROPERTIES(BulletRobotics PROPERTIES INSTALL_RPATH $ORIGIN)
 
 IF (BUILD_SHARED_LIBS)
 	TARGET_LINK_LIBRARIES(BulletRobotics BulletInverseDynamicsUtils BulletWorldImporter BulletFileLoader BulletSoftBody BulletDynamics BulletCollision BulletInverseDynamics LinearMath Bullet3Common)

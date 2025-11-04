@@ -340,7 +340,7 @@ py::list py_get_closest_filtered_map_batch(KineverseWorld& world, py::dict query
 using ShapePtr = std::shared_ptr<btCollisionShape>;
 
 
-PYBIND11_MODULE(betterpybullet, m) {
+PYBIND11_MODULE(_betterpybullet, m) {
     m.doc() = "Attempt at exposing bullet's collision functionality.";
     m.def("get_version", []() {
         return string_format("Better PyBullet. Built: %s %s", __DATE__, __TIME__);
@@ -623,9 +623,19 @@ PYBIND11_MODULE(betterpybullet, m) {
             btVector3& p = map_T_geo.getOrigin();
             btQuaternion q = map_T_geo.getRotation();
 
-            py::object position = geometry_msgs.attr("Point")(p.x(), p.y(), p.z());
-            py::object orientation = geometry_msgs.attr("Quaternion")(q.x(), q.y(), q.z(), q.w());
-            return geometry_msgs.attr("Pose")(position, orientation);
+            py::object position = geometry_msgs.attr("Point")();
+            position.attr("x") = p.x();
+            position.attr("y") = p.y();
+            position.attr("z") = p.z();
+            py::object orientation = geometry_msgs.attr("Quaternion")();
+            orientation.attr("x") = q.x();
+            orientation.attr("y") = q.y();
+            orientation.attr("z") = q.z();
+            orientation.attr("w") = q.w();
+            py::object pose = geometry_msgs.attr("Pose")();
+            pose.attr("position") = position;
+            pose.attr("orientation") = orientation;
+            return pose;
         }, py::arg("shape_idx") = 0)
         .def_property_readonly("np_inv_transform", [](const KineverseCollisionObject& o) {
             return to_np(o.getWorldTransform().inverse());

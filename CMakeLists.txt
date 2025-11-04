@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.4.3)
+cmake_minimum_required(VERSION 3.5)
 set(CMAKE_ALLOW_LOOSE_LOOP_CONSTRUCTS true)
 cmake_policy(SET CMP0017 NEW)
 #this line has to appear before 'PROJECT' in order to be able to disable incremental linking
@@ -347,7 +347,7 @@ IF(BUILD_PYBULLET)
 	# python library should exactly match that of the interpreter
 	# the following can result in fatal error if you don't have the right python configuration
 	FIND_PACKAGE(PythonLibs ${PYTHON_VERSION_STRING} EXACT)
-	SUBDIRS(better_python)
+	SUBDIRS(betterpybullet)
 ENDIF(BUILD_PYBULLET)
 
 OPTION(BUILD_ENET "Set when you want to build apps with enet UDP networking support" ON)

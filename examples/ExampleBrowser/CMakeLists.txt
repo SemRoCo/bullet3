@@ -47,6 +47,7 @@ ADD_LIBRARY(BulletExampleBrowserLib
 
 SET_TARGET_PROPERTIES(BulletExampleBrowserLib PROPERTIES VERSION ${BULLET_VERSION})
 SET_TARGET_PROPERTIES(BulletExampleBrowserLib PROPERTIES SOVERSION ${BULLET_VERSION})
+SET_TARGET_PROPERTIES(BulletExampleBrowserLib PROPERTIES INSTALL_RPATH $ORIGIN)
 IF (BUILD_SHARED_LIBS)
 		IF (WIN32)
                 TARGET_LINK_LIBRARIES(
@@ -417,11 +418,11 @@ SET(BulletExampleBrowser_SRCS
 
 FILE( MAKE_DIRECTORY "${PROJECT_BINARY_DIR}/data" )
 
-ADD_CUSTOM_COMMAND(
-                TARGET App_ExampleBrowser
-                POST_BUILD
-                COMMAND ${CMAKE_COMMAND} ARGS -E copy_directory ${BULLET_PHYSICS_SOURCE_DIR}/data ${PROJECT_BINARY_DIR}/data
-        )
+# ADD_CUSTOM_COMMAND(
+#                 TARGET App_ExampleBrowser
+#                 POST_BUILD
+#                 COMMAND ${CMAKE_COMMAND} ARGS -E copy_directory ${BULLET_PHYSICS_SOURCE_DIR}/data ${PROJECT_BINARY_DIR}/data
+#         )
 
 IF (BULLET2_USE_TBB_MULTITHREADING AND WIN32)
     # add a post build command to copy some dlls to the executable directory

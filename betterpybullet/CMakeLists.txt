@@ -1,5 +1,13 @@
 IF(BUILD_PYBULLET)
-    FIND_PACKAGE(pybind11 REQUIRED)
+    include(FetchContent)
+
+    FetchContent_Declare(
+        pybind11
+        URL https://github.com/pybind/pybind11/archive/refs/tags/v2.13.6.tar.gz
+        URL_HASH SHA256=e08cb87f4773da97fa7b5f035de8763abc656d87d5773e62f6da0587d1f0ec20
+    )
+    FetchContent_MakeAvailable(pybind11)
+
     INCLUDE_DIRECTORIES( 
         ${BULLET_PHYSICS_SOURCE_DIR}/src/
         ${BULLET_PHYSICS_SOURCE_DIR}/examples/ThirdPartyLibs/
@@ -30,6 +38,7 @@ IF(BUILD_PYBULLET)
                 ../examples/SharedMemory/PhysicsClientC_API.cpp
                 ../examples/Utils/b3Clock.cpp
                 ../examples/Importers/ImportColladaDemo/LoadMeshFromCollada.cpp)
+    target_include_directories(kineverse PRIVATE ${pybind11_INCLUDE_DIRS})
     target_link_libraries(kineverse PUBLIC BulletCollision BulletDynamics Bullet3Common LinearMath)
 
 #     add_executable(kineverse_test kineverse_test.cpp)
@@ -48,7 +57,13 @@ IF(BUILD_PYBULLET)
     SET(bpb_SRCS
         bind_collisions.cpp)
 
-    PYBIND11_ADD_MODULE(betterpybullet SHARED ${bpb_SRCS} ${Root_HDRS})
-    TARGET_LINK_LIBRARIES(betterpybullet PRIVATE kineverse)# BulletCollision BulletDynamics Bullet3Common LinearMath)
+    PYBIND11_ADD_MODULE(_betterpybullet SHARED ${bpb_SRCS} ${Root_HDRS})
+    TARGET_LINK_LIBRARIES(_betterpybullet PRIVATE kineverse)# BulletCollision BulletDynamics Bullet3Common LinearMath)
+
+    SET_TARGET_PROPERTIES(_betterpybullet PROPERTIES INSTALL_RPATH "\$ORIGIN/lib")
+    SET_TARGET_PROPERTIES(kineverse PROPERTIES INSTALL_RPATH $ORIGIN)
+
+    INSTALL(TARGETS kineverse DESTINATION "lib")
+    INSTALL(TARGETS _betterpybullet DESTINATION .)
 
 ENDIF(BUILD_PYBULLET)

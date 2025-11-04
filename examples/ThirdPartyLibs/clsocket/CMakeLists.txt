@@ -62,6 +62,7 @@ else()
         ADD_LIBRARY(clsocket STATIC ${CLSOCKET_SOURCES})
     endif()
 endif()
+SET_TARGET_PROPERTIES(clsocket PROPERTIES INSTALL_RPATH $ORIGIN)
 TARGET_LINK_LIBRARIES(clsocket ${PROJECT_LIBS})
 
 # install into configured prefix
