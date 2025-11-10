@@ -8,7 +8,7 @@ requires = [
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "betterpybullet"
+name = "giskardpy_bullet_bindings"
 version = "0.1.0"
 dynamic = ["license"]
 description = ''

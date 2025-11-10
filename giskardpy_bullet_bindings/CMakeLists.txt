@@ -57,13 +57,13 @@ IF(BUILD_PYBULLET)
     SET(bpb_SRCS
         bind_collisions.cpp)
 
-    PYBIND11_ADD_MODULE(_betterpybullet SHARED ${bpb_SRCS} ${Root_HDRS})
-    TARGET_LINK_LIBRARIES(_betterpybullet PRIVATE kineverse)# BulletCollision BulletDynamics Bullet3Common LinearMath)
+    PYBIND11_ADD_MODULE(_giskardpy_bullet_bindings SHARED ${bpb_SRCS} ${Root_HDRS})
+    TARGET_LINK_LIBRARIES(_giskardpy_bullet_bindings PRIVATE kineverse)# BulletCollision BulletDynamics Bullet3Common LinearMath)
 
-    SET_TARGET_PROPERTIES(_betterpybullet PROPERTIES INSTALL_RPATH "\$ORIGIN/lib")
+    SET_TARGET_PROPERTIES(_giskardpy_bullet_bindings PROPERTIES INSTALL_RPATH "\$ORIGIN/lib")
     SET_TARGET_PROPERTIES(kineverse PROPERTIES INSTALL_RPATH $ORIGIN)
 
     INSTALL(TARGETS kineverse DESTINATION "lib")
-    INSTALL(TARGETS _betterpybullet DESTINATION .)
+    INSTALL(TARGETS _giskardpy_bullet_bindings DESTINATION .)
 
 ENDIF(BUILD_PYBULLET)

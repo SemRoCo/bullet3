@@ -347,7 +347,7 @@ IF(BUILD_PYBULLET)
 	# python library should exactly match that of the interpreter
 	# the following can result in fatal error if you don't have the right python configuration
 	FIND_PACKAGE(PythonLibs ${PYTHON_VERSION_STRING} EXACT)
-	SUBDIRS(betterpybullet)
+	SUBDIRS(giskardpy_bullet_bindings)
 ENDIF(BUILD_PYBULLET)
 
 OPTION(BUILD_ENET "Set when you want to build apps with enet UDP networking support" ON)
