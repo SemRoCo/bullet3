@@ -9,9 +9,9 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "giskardpy_bullet_bindings"
-version = "0.1.0"
+version = "1.0.1"
 dynamic = ["license"]
-description = ''
+description = 'Custom bullet wrapper used by Giskardpy'
 keywords = [
     'physics simulation', 'robotics',
     'collision detection', 'opengl'
